@@ -5,6 +5,12 @@ import json
 import random
 import numpy as np
 
+UP = 0
+DOWN = 1
+VARYING = 2
+CONSTANT = 3
+OFF = 4
+
 # PD Socket
 UDP_IP = 'localhost'
 UDP_PORT = 9082
@@ -18,7 +24,6 @@ s.setblocking(False)
 
 pause = 0.5
 
-
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b","g", "a_b", "a", "b_b", "b"]
 oktave = 5
 MIDI_MULTIPLIER = oktave*15
@@ -30,18 +35,23 @@ translation_pit_2_midi = dict(zip(PITCH_CLASSES, midis))
 note_range = list(range(60, 72))  # C4 to B4
 
 probabilities = None
+trend = OFF
 
 def check_for_incoming_data():
     print("Checking for incoming data")
     global probabilities
+    global trend
     try:
         conn, addr = s.accept()
         with conn:
             print('Connected by', addr)
             data = conn.recv(1024)
             if data:
-                probabilities = json.loads(data.decode('utf-8'))
+                received_data = json.loads(data.decode('utf-8'))
+                probabilities = received_data.get("pitch_probabilities")
+                trend = received_data.get("trend")
                 print("Received probabilities:", probabilities)
+                print("Received trend:", trend)
     except socket.error as e:
         if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
             print('Socket error:', e)
@@ -66,7 +76,7 @@ while True:
         note_bytes = note.to_bytes(1, 'big') 
         
         # Send the bytes over UDP
-        sock.sendto(note_bytes, (UDP_IP, UDP_PORT))
+        # sock.sendto(note_bytes, (UDP_IP, UDP_PORT))
         
     # Pause
     time.sleep(pause)
