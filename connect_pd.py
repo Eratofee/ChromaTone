@@ -25,7 +25,7 @@ s.bind(('localhost', 12346))
 s.listen()
 s.setblocking(False)
 
-pause = 2
+pause = .4
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b","g", "a_b", "a", "b_b", "b"]
 oktave = 5
@@ -44,13 +44,19 @@ def check_for_incoming_data():
     print("Checking for incoming data")
     global probabilities
     global trend
+
     try:
         conn, addr = s.accept()
         with conn:
             print('Connected by', addr)
-            data = conn.recv(1024)
-            if data:
-                received_data = json.loads(data.decode('utf-8'))
+            data_buffer = b""
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                data_buffer += data
+            if data_buffer:
+                received_data = json.loads(data_buffer.decode('utf-8'))
                 probabilities = received_data.get("pitch_probabilities")
                 trend = received_data.get("trend")
                 print("Received probabilities:", probabilities)
@@ -68,13 +74,13 @@ def choose_motif():
         key_ind = np.argmax(probabilities)
         key = PITCH_CLASSES[key_ind]
         print("Key is", key)
-        print("Trend is", trend)
+        # print("Trend is", trend)
+        print_trend(trend=trend)
         if trend == 4:
             return None
         df_filtered = midi_motives[(midi_motives["direction"] == trend) & (midi_motives["scale"] == "Maj")]
         random_row = df_filtered.sample()
         midi_notes = random_row["midi_notes"].iloc[0]
-        print("sequence upcoming", midi_notes)
         return np.array(ast.literal_eval(midi_notes)) + key_ind
     else:
         print("Failed to generate note")
@@ -84,18 +90,21 @@ while True:
     check_for_incoming_data()
     
     notes = choose_motif()
-    
+    print("received sequence")
     if notes is not None:
+    # if notes is not None:
         for note in notes:
         # Convert the note to bytes
+            # note += 12
             print(note)
-            note += 12
 
             note_bytes = note.tobytes() 
             
             # Send the bytes over UDP
             sock.sendto(note_bytes, (UDP_IP, UDP_PORT))
 
-        # Pause
-        time.sleep(pause)
+            # Pause
+            time.sleep(pause)
+
+    check_for_incoming_data()
     
