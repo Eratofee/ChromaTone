@@ -2,8 +2,11 @@ import socket
 import time
 import errno
 import json
+from drawing import print_trend
 import random
+import pandas as pd
 import numpy as np
+import ast  # Import ast module to parse strings into lists/arrays
 
 UP = 0
 DOWN = 1
@@ -13,16 +16,16 @@ OFF = 4
 
 # PD Socket
 UDP_IP = 'localhost'
-UDP_PORT = 9082
+UDP_PORT = 8000
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Probabilities Socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('localhost', 12345))
+s.bind(('localhost', 12346))
 s.listen()
 s.setblocking(False)
 
-pause = 0.5
+pause = 2
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b","g", "a_b", "a", "b_b", "b"]
 oktave = 5
@@ -35,7 +38,7 @@ translation_pit_2_midi = dict(zip(PITCH_CLASSES, midis))
 note_range = list(range(60, 72))  # C4 to B4
 
 probabilities = None
-trend = OFF
+trend = None
 
 def check_for_incoming_data():
     print("Checking for incoming data")
@@ -52,15 +55,27 @@ def check_for_incoming_data():
                 trend = received_data.get("trend")
                 print("Received probabilities:", probabilities)
                 print("Received trend:", trend)
+                print_trend(trend=trend)
     except socket.error as e:
         if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
             print('Socket error:', e)
 
-def generate_note():
-    print("Generating note")
+midi_motives = pd.read_csv("midi_motives.csv")
+
+def choose_motif():
     if probabilities:
-        print("Generating note with probabilities")
-        return translation_pit_2_midi[np.random.choice(a = PITCH_CLASSES, p = probabilities, size = 1)[0]]
+        print("Generating note")
+        key_ind = np.argmax(probabilities)
+        key = PITCH_CLASSES[key_ind]
+        print("Key is", key)
+        print("Trend is", trend)
+        if trend == 4:
+            return None
+        df_filtered = midi_motives[(midi_motives["direction"] == trend) & (midi_motives["scale"] == "Maj")]
+        random_row = df_filtered.sample()
+        midi_notes = random_row["midi_notes"].iloc[0]
+        print("sequence upcoming", midi_notes)
+        return np.array(ast.literal_eval(midi_notes)) + key_ind
     else:
         print("Failed to generate note")
         return None  # Default to random note if no probabilities
@@ -68,15 +83,19 @@ def generate_note():
 while True:
     check_for_incoming_data()
     
-    note = generate_note()
+    notes = choose_motif()
     
-    if note:
+    if notes is not None:
+        for note in notes:
         # Convert the note to bytes
-        print(note)
-        note_bytes = note.to_bytes(1, 'big') 
-        
-        # Send the bytes over UDP
-        # sock.sendto(note_bytes, (UDP_IP, UDP_PORT))
-        
-    # Pause
-    time.sleep(pause)
+            print(note)
+            note += 12
+
+            note_bytes = note.tobytes() 
+            
+            # Send the bytes over UDP
+            sock.sendto(note_bytes, (UDP_IP, UDP_PORT))
+
+        # Pause
+        time.sleep(pause)
+    

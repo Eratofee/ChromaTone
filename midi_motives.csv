@@ -1,41 +1,41 @@
-file_path,direction,scale
-chromaTone_midi_files/Eas Asc 2.mid,Asc,Eas
-chromaTone_midi_files/Eas Osc 2.mid,Osc,Eas
-chromaTone_midi_files/Eas Hor 1.mid,Hor,Eas
-chromaTone_midi_files/Maj Osc 2.mid,Osc,Maj
-chromaTone_midi_files/Eas Des 1.mid,Des,Eas
-chromaTone_midi_files/min Osc 2.mid,Osc,min
-chromaTone_midi_files/Maj Des 2.mid,Des,Maj
-chromaTone_midi_files/Maj Hor 1.mid,Hor,Maj
-chromaTone_midi_files/min Asc 1.mid,Asc,min
-chromaTone_midi_files/Maj Hor 3.mid,Hor,Maj
-chromaTone_midi_files/Maj Asc 2.mid,Asc,Maj
-chromaTone_midi_files/Eas Des 2.mid,Des,Eas
-chromaTone_midi_files/min Hor 4.mid,Hor,min
-chromaTone_midi_files/min Asc 3.mid,Asc,min
-chromaTone_midi_files/Eas Hor 2.mid,Hor,Eas
-chromaTone_midi_files/min Hor 2.mid,Hor,min
-chromaTone_midi_files/min Osc 4.mid,Osc,min
-chromaTone_midi_files/Maj Hor 4.mid,Hor,Maj
-chromaTone_midi_files/Maj Osc 4.mid,Osc,Maj
-chromaTone_midi_files/min Des 4.mid,Des,min
-chromaTone_midi_files/Maj Osc 1.mid,Osc,Maj
-chromaTone_midi_files/Maj Hor 2.mid,Hor,Maj
-chromaTone_midi_files/Maj Asc 1.mid,Asc,Maj
-chromaTone_midi_files/min Des 1.mid,Des,min
-chromaTone_midi_files/min Des 3.mid,Des,min
-chromaTone_midi_files/min Asc 2.mid,Asc,min
-chromaTone_midi_files/min Osc 1.mid,Osc,min
-chromaTone_midi_files/min Hor 1.mid,Hor,min
-chromaTone_midi_files/Maj Des 1.mid,Des,Maj
-chromaTone_midi_files/Maj Asc 3.mid,Asc,Maj
-chromaTone_midi_files/Maj Des 3.mid,Des,Maj
-chromaTone_midi_files/min Des 2.mid,Des,min
-chromaTone_midi_files/min Hor 3.mid,Hor,min
-chromaTone_midi_files/Maj Osc 3.mid,Osc,Maj
-chromaTone_midi_files/Maj Des 4.mid,Des,Maj
-chromaTone_midi_files/min Osc 3.mid,Osc,min
-chromaTone_midi_files/Eas Osc 1.mid,Osc,Eas
-chromaTone_midi_files/Maj Asc 4.mid,Asc,Maj
-chromaTone_midi_files/min Asc 4.mid,Asc,min
-chromaTone_midi_files/Eas Asc 1.mid,Asc,Eas
+file_path,direction,scale,midi_notes
+chromaTone_midi_files/Eas Asc 2.mid,0,Eas,"[55, 56, 53, 59, 60, 56, 62, 65, 59, 67, 68]"
+chromaTone_midi_files/Eas Osc 2.mid,2,Eas,"[66, 63, 56, 59, 67, 55, 60, 59]"
+chromaTone_midi_files/Eas Hor 1.mid,3,Eas,"[55, 56, 59, 55, 56, 59, 56, 55]"
+chromaTone_midi_files/Maj Osc 2.mid,2,Maj,"[53, 60, 55, 60, 57, 60, 55, 53]"
+chromaTone_midi_files/Eas Des 1.mid,1,Eas,"[79, 78, 75, 74, 72, 71, 68, 67]"
+chromaTone_midi_files/min Osc 2.mid,2,min,"[56, 65, 55, 63, 56, 65, 58, 56]"
+chromaTone_midi_files/Maj Des 2.mid,1,Maj,"[74, 72, 69, 66, 62, 60, 57, 54]"
+chromaTone_midi_files/Maj Hor 1.mid,3,Maj,"[60, 60, 62, 60, 64, 60, 62, 60]"
+chromaTone_midi_files/min Asc 1.mid,0,min,"[48, 55, 55, 60, 62, 60, 63, 67, 67, 72, 79]"
+chromaTone_midi_files/Maj Hor 3.mid,3,Maj,"[60, 60, 59, 60, 64, 60, 59, 60]"
+chromaTone_midi_files/Maj Asc 2.mid,0,Maj,"[48, 57, 53, 55, 60, 65, 67, 72]"
+chromaTone_midi_files/Eas Des 2.mid,1,Eas,"[79, 78, 68, 75, 74, 62, 72, 71, 59, 68, 67]"
+chromaTone_midi_files/min Hor 4.mid,3,min,"[65, 60, 60, 62, 60, 56, 62, 60]"
+chromaTone_midi_files/min Asc 3.mid,0,min,"[50, 56, 53, 62, 60, 62, 68, 65, 65, 72, 74]"
+chromaTone_midi_files/Eas Hor 2.mid,3,Eas,"[62, 60, 59, 60, 59, 62, 60, 59]"
+chromaTone_midi_files/min Hor 2.mid,3,min,"[60, 60, 62, 60, 65, 60, 62, 60]"
+chromaTone_midi_files/min Osc 4.mid,2,min,"[56, 67, 58, 56, 65, 60, 67, 56]"
+chromaTone_midi_files/Maj Hor 4.mid,3,Maj,"[57, 60, 59, 60, 60, 60, 57, 60]"
+chromaTone_midi_files/Maj Osc 4.mid,2,Maj,"[60, 53, 55, 57, 60, 55, 60, 57]"
+chromaTone_midi_files/min Des 4.mid,1,min,"[79, 77, 68, 74, 72, 65, 68, 67, 56, 65, 60]"
+chromaTone_midi_files/Maj Osc 1.mid,2,Maj,"[52, 60, 53, 60, 55, 60, 57, 55]"
+chromaTone_midi_files/Maj Hor 2.mid,3,Maj,"[60, 60, 62, 60, 65, 60, 62, 60]"
+chromaTone_midi_files/Maj Asc 1.mid,0,Maj,"[48, 55, 50, 52, 60, 62, 64, 67]"
+chromaTone_midi_files/min Des 1.mid,1,min,"[79, 75, 67, 74, 72, 63, 67, 63, 55, 62, 60]"
+chromaTone_midi_files/min Des 3.mid,1,min,"[77, 74, 65, 72, 68, 60, 67, 65, 56, 60, 56]"
+chromaTone_midi_files/min Asc 2.mid,0,min,"[51, 55, 55, 63, 60, 63, 72, 67, 72, 75, 79]"
+chromaTone_midi_files/min Osc 1.mid,2,min,"[55, 63, 56, 62, 55, 63, 56, 55]"
+chromaTone_midi_files/min Hor 1.mid,3,min,"[60, 60, 63, 60, 62, 60, 63, 60]"
+chromaTone_midi_files/Maj Des 1.mid,1,Maj,"[72, 71, 69, 65, 60, 59, 57, 53]"
+chromaTone_midi_files/Maj Asc 3.mid,0,Maj,"[43, 59, 55, 62, 57, 59, 67, 74]"
+chromaTone_midi_files/Maj Des 3.mid,1,Maj,"[75, 74, 72, 68, 63, 62, 60, 56]"
+chromaTone_midi_files/min Des 2.mid,1,min,"[75, 74, 67, 72, 67, 60, 63, 62, 55, 60, 55]"
+chromaTone_midi_files/min Hor 3.mid,3,min,"[60, 63, 60, 62, 60, 55, 62, 60]"
+chromaTone_midi_files/Maj Osc 3.mid,2,Maj,"[55, 62, 57, 62, 59, 67, 60, 59]"
+chromaTone_midi_files/Maj Des 4.mid,1,Maj,"[77, 74, 72, 70, 65, 62, 60, 58]"
+chromaTone_midi_files/min Osc 3.mid,2,min,"[58, 67, 60, 58, 65, 60, 67, 58]"
+chromaTone_midi_files/Eas Osc 1.mid,2,Eas,"[62, 55, 56, 59, 60, 53, 62, 55]"
+chromaTone_midi_files/Maj Asc 4.mid,0,Maj,"[45, 53, 48, 57, 53, 60, 65, 72]"
+chromaTone_midi_files/min Asc 4.mid,0,min,"[53, 56, 56, 60, 65, 60, 68, 72, 68, 77, 80]"
+chromaTone_midi_files/Eas Asc 1.mid,0,Eas,"[55, 56, 60, 62, 67, 68, 72, 74]"

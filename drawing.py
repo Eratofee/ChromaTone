@@ -116,7 +116,7 @@ def analyse_send_data(image, trend):
     data = json.dumps(data_to_send)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect(('localhost', 12345))  
+        s.connect(('localhost', 12346))  
         s.sendall(data.encode('utf-8'))
 
     return 
@@ -129,7 +129,7 @@ class DrawingApp:
 
         # Apply a theme
         self.style = ttk.Style()
-        self.style.theme_use('aqua')  
+        self.style.theme_use('default')  
         self.style.configure("Horizontal.TScale", background='#333', foreground='white', troughcolor='#555', sliderlength=20, borderwidth=1)
         self.style.map("Horizontal.TScale", background=[('active', '#555')])
 
