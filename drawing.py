@@ -9,6 +9,12 @@ import socket
 import json
 
 
+UP = 0
+DOWN = 1
+VARYING = 2
+CONSTANT = 3
+OFF = 4
+
 color_ranges = {
     'red': [(0, 10), (166, 180)],  # Red is split into two ranges [0, 10] and [166, 180
     'orange': (11, 23),
@@ -37,24 +43,9 @@ color_notes = {
     "b_b": "magenta",
     "b": "violet"
 }
-# color_notes_2 = {
-#     'white': "c",
-#     "ocean": "d_b",
-#     'red': "a",
-#     'orange': "e_b",
-#     'yellow': "e",
-#     'spring_green': "g_b",
-#     'green': "f",
-#     'turquoise': "d",
-#     'cyan': "a_b",
-#     'blue': "g",
-#     'violet': "b",
-#     'magenta': "b_b"
-# }
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b","g", "a_b", "a", "b_b", "b"]
 
-     
 def sum_color_counts(color_counts):
     total_count = np.sum(list(color_counts.values()))
     return total_count
@@ -92,14 +83,24 @@ def get_color_statistics(image):
                 
                 color_counts[color] += np.sum(color_mask)
             
-    non_black_pixels_count = np.sum(np.logical_not(black_mask))
     temp_total = sum_color_counts(color_counts)
 
     pitch_probabilities = []
     for pitch in PITCH_CLASSES:
         pitch_probabilities.append(color_counts[color_notes[pitch]]/temp_total)
 
-    data = json.dumps(pitch_probabilities)
+    return pitch_probabilities
+
+def analyse_send_data(image, trend):
+    pitch_probabilities = get_color_statistics(image)
+
+    data_to_send = {
+        "pitch_probabilities": pitch_probabilities,
+        "trend": trend
+    }
+
+    data = json.dumps(data_to_send)
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(('localhost', 12345))  # Receiver's address and port
         s.sendall(data.encode('utf-8'))
@@ -131,7 +132,9 @@ class DrawingApp:
         self.brush_thickness.set(2)  # default thickness
         self.brush_thickness.pack(side='left')
 
-        self.last_pos = None  # Store the last position of the mouse
+        self.last_pos = None 
+        self.directions = []
+        self.trend = OFF
         self.canvas.bind('<B1-Motion>', self.paint)
         self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos)  # Reset last_pos on mouse release
         self.capture_delay = 5000  # Delay in milliseconds between captures
@@ -142,6 +145,35 @@ class DrawingApp:
         if color_code:
             self.color = color_code
 
+    def analyze_trend(self):
+        up_count = self.directions.count(UP)
+        down_count = self.directions.count(DOWN)
+        constant_count = self.directions.count(CONSTANT)
+        dir_len = len(self.directions)
+
+        if abs(up_count - down_count) < 10 and constant_count < 10:
+            return VARYING
+        if up_count > dir_len / 2:
+            return UP
+        elif down_count > dir_len / 2:
+            return DOWN
+        elif constant_count > dir_len / 2:
+            return CONSTANT
+        else:
+            return VARYING
+        
+    def print_trend(self):
+        if self.trend == UP:
+            print("Trend: Up")
+        elif self.trend == DOWN:
+            print("Trend: Down")
+        elif self.trend == CONSTANT:
+            print("Trend: Constant")
+        elif self.trend == VARYING:
+            print("Trend: Varying")
+        else:
+            print("Trend: Off")
+
     def paint(self, event):
         x, y = event.x, event.y
         size = self.brush_thickness.get()
@@ -151,10 +183,33 @@ class DrawingApp:
             self.canvas.create_rectangle(x-size, y-size, x+size, y+size, fill=self.color, outline=self.color)
         elif self.brush_type.get() == "Line" and self.last_pos:
             self.canvas.create_line(self.last_pos[0], self.last_pos[1], x, y, fill=self.color, width=size, capstyle=ROUND, smooth=TRUE, splinesteps=36)
+        
+        if self.last_pos:
+            dx = x - self.last_pos[0]
+            dy = y - self.last_pos[1]
+            
+            if dy < 0:
+                direction = UP
+            elif dy > 0:
+                direction = DOWN
+            else:
+                direction = CONSTANT
+            
+            # print("Direction:", self.print_trend(direction)) 
+
+            self.directions.append(direction)
+            if len(self.directions) > 100:
+                self.trend = self.analyze_trend()
+                self.directions = []
+                # self.directions.pop(0)
+                self.print_trend()
+
         self.last_pos = (x, y)  
 
     def reset_last_pos(self, event):
         self.last_pos = None  
+        self.trend = OFF
+        self.print_trend()
 
     def capture_canvas_content(self):
         def capture_and_analyze():
@@ -164,7 +219,7 @@ class DrawingApp:
             y1 = y + self.canvas.winfo_height()
             image = ImageGrab.grab(bbox=(x, y, x1, y1))
             
-            get_color_statistics(np.array(image))
+            analyse_send_data(np.array(image))
 
         analysis_thread = threading.Thread(target=capture_and_analyze)
         analysis_thread.start()
