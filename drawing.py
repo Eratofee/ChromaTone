@@ -1,4 +1,4 @@
-from tkinter import Canvas, Frame, Tk, ttk, HORIZONTAL, TRUE, ROUND
+from tkinter import Canvas, Frame, Tk, ttk, Button, font, HORIZONTAL, TRUE, ROUND, RAISED, SUNKEN
 from functools import partial
 from tkinter.colorchooser import askcolor 
 from PIL import ImageGrab
@@ -124,6 +124,7 @@ def analyse_send_data(image, trend):
 class DrawingApp:
     def __init__(self, root):
         self.root = root
+        root.title('ChromaTone')
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
 
@@ -132,28 +133,31 @@ class DrawingApp:
         self.style.theme_use('default')  
         self.style.configure("Horizontal.TScale", background='#333', foreground='white', troughcolor='#555', sliderlength=20, borderwidth=1)
         self.style.map("Horizontal.TScale", background=[('active', '#555')])
-
-        # Customize button style
-        self.style.configure('TButton', font=('Helvetica', 12), background='#333', foreground='white', borderwidth=1)
-        self.style.map('TButton', background=[('active', '#555')])
+        self.style.configure("Eraser.TButton", font=('Helvetica', 13))
+        self.style.configure("ActiveEraser.TButton", font=('Helvetica', 13, 'bold'))
 
         self.color_frame = Frame(root)
         self.color_frame.pack(side='top', fill='x', padx=10, pady=5)
 
+
         self.color_wheel_btn = ttk.Button(self.color_frame, text='Choose Color', command=self.choose_color)
-        self.color_wheel_btn.pack(side='left', padx=5)
+        self.color_wheel_btn.pack(side='left', padx=5, in_=self.color_frame)
 
         # Brush Type Selection
         self.brush_type = ttk.Combobox(self.color_frame, values=[ "Line", "Oval", "Square"], state="readonly")
         self.brush_type.set("Line") 
-        self.brush_type.pack(side='left', padx=5)
+        self.brush_type.pack(side='left', padx=5, in_=self.color_frame)
+
+        # Eraser Button
+        self.eraser_btn = ttk.Button(self.root, text='Eraser', style="Eraser.TButton", command=self.toggle_eraser)
+        self.eraser_btn.pack(side='left', padx=5, in_=self.color_frame)
 
         # Brush Thickness Selection
-        self.brush_thickness_label = ttk.Label(self.color_frame, text="Brush Thickness:")
-        self.brush_thickness_label.pack(side='left', padx=5)
+        self.brush_thickness_label = ttk.Label(self.color_frame, text="Thickness:")
+        self.brush_thickness_label.pack(side='left', padx=5, in_=self.color_frame)
         self.brush_thickness = ttk.Scale(self.color_frame, from_=1, to=40, orient='horizontal', style="Horizontal.TScale")
         self.brush_thickness.set(10)  # default thickness
-        self.brush_thickness.pack(side='left', padx=5)
+        self.brush_thickness.pack(side='left', padx=5, in_=self.color_frame)
 
         self.canvas = Canvas(root, bg='black', width=screen_width, height=screen_height - self.color_frame.winfo_reqheight())
         self.canvas.pack(padx=10, pady=5)
@@ -161,7 +165,8 @@ class DrawingApp:
 
         self.last_pos = None 
         self.directions = []
-        self.trend = OFF
+        self.trend = CONSTANT
+        self.eraser_active = False
         self.canvas.bind('<B1-Motion>', self.paint)
         self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos) 
         self.capture_delay = 5000  
@@ -188,42 +193,53 @@ class DrawingApp:
             return CONSTANT
         else:
             return VARYING
+
+    def toggle_eraser(self):
+        self.eraser_active = not self.eraser_active
         
+        if self.eraser_active:
+            self.eraser_btn.configure(style="ActiveEraser.TButton")
+        else:
+            self.eraser_btn.configure(style="Eraser.TButton")
+
     def paint(self, event):
+        paint_color = 'black' if self.eraser_active else self.color
+
         x, y = event.x, event.y
         size = self.brush_thickness.get()
         if self.brush_type.get() == "Oval":
-            self.canvas.create_oval(x-size, y-size, x+size, y+size, fill=self.color, outline=self.color)
+            self.canvas.create_oval(x-size, y-size, x+size, y+size, fill=paint_color, outline=paint_color)
         elif self.brush_type.get() == "Square":
-            self.canvas.create_rectangle(x-size, y-size, x+size, y+size, fill=self.color, outline=self.color)
+            self.canvas.create_rectangle(x-size, y-size, x+size, y+size, fill=paint_color, outline=paint_color)
         elif self.brush_type.get() == "Line" and self.last_pos:
-            self.canvas.create_line(self.last_pos[0], self.last_pos[1], x, y, fill=self.color, width=size, capstyle=ROUND, smooth=TRUE, splinesteps=36)
+            self.canvas.create_line(self.last_pos[0], self.last_pos[1], x, y, fill=paint_color, width=size, capstyle=ROUND, smooth=TRUE, splinesteps=36)
         
-        if self.last_pos:
-            # dx = x - self.last_pos[0]
-            dy = y - self.last_pos[1]
-            
-            if dy < 0:
-                direction = UP
-            elif dy > 0:
-                direction = DOWN
-            else:
-                direction = CONSTANT
-            
-            # print("Direction:", self.print_trend(direction)) 
+        if not self.eraser_active:
+            if self.last_pos:
+                # dx = x - self.last_pos[0]
+                dy = y - self.last_pos[1]
+                
+                if dy < 0:
+                    direction = UP
+                elif dy > 0:
+                    direction = DOWN
+                else:
+                    direction = CONSTANT
+                
+                # print("Direction:", self.print_trend(direction)) 
 
-            self.directions.append(direction)
-            if len(self.directions) > 100:
-                self.trend = self.analyze_trend()
-                self.directions = []
-                # self.directions.pop(0)
-                # print_trend(self.trend)
+                self.directions.append(direction)
+                if len(self.directions) > 100:
+                    self.trend = self.analyze_trend()
+                    self.directions = []
+                    # self.directions.pop(0)
+                    # print_trend(self.trend)
 
-        self.last_pos = (x, y)  
+        self.last_pos = (x, y)
 
     def reset_last_pos(self, event):
         self.last_pos = None  
-        self.trend = OFF
+        # self.trend = OFF
         # print_trend(self.trend)
 
     def capture_canvas_content(self):
