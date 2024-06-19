@@ -99,10 +99,6 @@ def get_color_statistics(image):
     for pitch in PITCH_CLASSES:
         pitch_probabilities.append(color_counts[color_notes[pitch]]/temp_total)
 
-    # note_counts = {color_notes_2[color]: count/temp_total for color, count in color_counts.items()}
-    # print(note_counts)
-    # print(pitch_probabilities)
-    # print(non_black_pixels_count)
     data = json.dumps(pitch_probabilities)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(('localhost', 12345))  # Receiver's address and port
