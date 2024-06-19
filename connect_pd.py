@@ -6,8 +6,8 @@ import random
 import numpy as np
 
 # PD Socket
-UDP_IP = "127.0.0.1"
-UDP_PORT = 8000
+UDP_IP = 'localhost'
+UDP_PORT = 9082
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Probabilities Socket
@@ -32,10 +32,12 @@ note_range = list(range(60, 72))  # C4 to B4
 probabilities = None
 
 def check_for_incoming_data():
+    print("Checking for incoming data")
     global probabilities
     try:
         conn, addr = s.accept()
         with conn:
+            print('Connected by', addr)
             data = conn.recv(1024)
             if data:
                 probabilities = json.loads(data.decode('utf-8'))
@@ -45,9 +47,12 @@ def check_for_incoming_data():
             print('Socket error:', e)
 
 def generate_note():
+    print("Generating note")
     if probabilities:
+        print("Generating note with probabilities")
         return translation_pit_2_midi[np.random.choice(a = PITCH_CLASSES, p = probabilities, size = 1)[0]]
     else:
+        print("Failed to generate note")
         return None  # Default to random note if no probabilities
 
 while True:
@@ -57,6 +62,7 @@ while True:
     
     if note:
         # Convert the note to bytes
+        print(note)
         note_bytes = note.to_bytes(1, 'big') 
         
         # Send the bytes over UDP

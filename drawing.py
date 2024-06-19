@@ -37,20 +37,20 @@ color_notes = {
     "b_b": "magenta",
     "b": "violet"
 }
-color_notes_2 = {
-    'white': "c",
-    "ocean": "d_b",
-    'red': "a",
-    'orange': "e_b",
-    'yellow': "e",
-    'spring_green': "g_b",
-    'green': "f",
-    'turquoise': "d",
-    'cyan': "a_b",
-    'blue': "g",
-    'violet': "b",
-    'magenta': "b_b"
-}
+# color_notes_2 = {
+#     'white': "c",
+#     "ocean": "d_b",
+#     'red': "a",
+#     'orange': "e_b",
+#     'yellow': "e",
+#     'spring_green': "g_b",
+#     'green': "f",
+#     'turquoise': "d",
+#     'cyan': "a_b",
+#     'blue': "g",
+#     'violet': "b",
+#     'magenta': "b_b"
+# }
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b","g", "a_b", "a", "b_b", "b"]
 
@@ -99,7 +99,7 @@ def get_color_statistics(image):
     for pitch in PITCH_CLASSES:
         pitch_probabilities.append(color_counts[color_notes[pitch]]/temp_total)
 
-    note_counts = {color_notes_2[color]: count/temp_total for color, count in color_counts.items()}
+    # note_counts = {color_notes_2[color]: count/temp_total for color, count in color_counts.items()}
     # print(note_counts)
     # print(pitch_probabilities)
     # print(non_black_pixels_count)
@@ -138,7 +138,7 @@ class DrawingApp:
         self.last_pos = None  # Store the last position of the mouse
         self.canvas.bind('<B1-Motion>', self.paint)
         self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos)  # Reset last_pos on mouse release
-        self.capture_delay = 10000  # Delay in milliseconds between captures
+        self.capture_delay = 5000  # Delay in milliseconds between captures
         self.capture_canvas_content()
 
     def choose_color(self):
