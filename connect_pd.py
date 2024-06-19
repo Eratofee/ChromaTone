@@ -59,9 +59,11 @@ def check_for_incoming_data():
                 received_data = json.loads(data_buffer.decode('utf-8'))
                 probabilities = received_data.get("pitch_probabilities")
                 trend = received_data.get("trend")
+                scale = received_data.get("scale")
                 print("Received probabilities:", probabilities)
-                print("Received trend:", trend)
+                print("Received:")
                 print_trend(trend=trend)
+                print("Received scale:", scale)
     except socket.error as e:
         if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
             print('Socket error:', e)

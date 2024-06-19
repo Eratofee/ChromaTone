@@ -55,11 +55,19 @@ def get_color_statistics(image):
 
     hue_channel, saturation_channel, value_channel = cv2.split(image)
     
-    color_counts = {color: 0 for color in color_ranges}
+    average_brightness = np.mean(value_channel)
+
+    scale = 'maj'
+    if average_brightness < 127:
+        scale = 'min'
+    else:
+        scale = 'max'
+
+    color_counts = {color: 0 for color in color_ranges}   
     color_counts['white'] = 0  
     
     black_mask = value_channel < 25
-    
+
     white_mask = np.logical_and(value_channel > 204, saturation_channel < 25)
     color_counts['white'] = np.sum(white_mask)
     
@@ -88,7 +96,7 @@ def get_color_statistics(image):
     for pitch in PITCH_CLASSES:
         pitch_probabilities.append(color_counts[color_notes[pitch]]/temp_total)
 
-    return pitch_probabilities
+    return pitch_probabilities, scale
 
 def print_trend(trend):
     if trend == UP:
@@ -104,12 +112,13 @@ def print_trend(trend):
 
 
 def analyse_send_data(image, trend):
-    pitch_probabilities = get_color_statistics(image)
+    pitch_probabilities, scale = get_color_statistics(image)
     print("Pitch Probabilities:", pitch_probabilities)
     print_trend(trend)
 
     data_to_send = {
         "pitch_probabilities": pitch_probabilities,
+        "scale": scale,
         "trend": trend
     }
 
