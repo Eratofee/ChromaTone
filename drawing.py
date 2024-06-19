@@ -116,9 +116,9 @@ def analyse_send_data(image, trend):
 
     data = json.dumps(data_to_send)
 
-    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    #     s.connect(('localhost', 12345))  # Receiver's address and port
-    #     s.sendall(data.encode('utf-8'))
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect(('localhost', 12345))  # Receiver's address and port
+        s.sendall(data.encode('utf-8'))
 
     return 
 
