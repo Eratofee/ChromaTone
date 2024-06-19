@@ -39,12 +39,13 @@ note_range = list(range(60, 72))  # C4 to B4
 
 probabilities = None
 trend = None
+scale = 'Min'
 
 def check_for_incoming_data():
     print("Checking for incoming data")
     global probabilities
     global trend
-
+    global scale
     try:
         conn, addr = s.accept()
         with conn:
@@ -80,7 +81,7 @@ def choose_motif():
         print_trend(trend=trend)
         if trend == 4:
             return None
-        df_filtered = midi_motives[(midi_motives["direction"] == trend) & (midi_motives["scale"] == "Maj")]
+        df_filtered = midi_motives[(midi_motives["direction"] == trend) & (midi_motives["scale"] == scale)]
         random_row = df_filtered.sample()
         midi_notes = random_row["midi_notes"].iloc[0]
         return np.array(ast.literal_eval(midi_notes)) + key_ind

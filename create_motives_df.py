@@ -14,7 +14,7 @@ def create_motives_df(midi_path):
         if file.is_file():
             # Split the file name to extract the scale and direction
             file_info = file.stem.split(" ")
-            scale = file_info[0]
+            scale = file_info[0].lower()
             direction = file_info[1]
             encoded_direction = direction_mapping.get(direction)
 

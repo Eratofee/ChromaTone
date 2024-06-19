@@ -57,11 +57,11 @@ def get_color_statistics(image):
     
     average_brightness = np.mean(value_channel)
 
-    scale = 'maj'
+    scale = 'min'
     if average_brightness < 127:
         scale = 'min'
     else:
-        scale = 'max'
+        scale = 'maj'
 
     color_counts = {color: 0 for color in color_ranges}   
     color_counts['white'] = 0  
@@ -115,6 +115,7 @@ def analyse_send_data(image, trend):
     pitch_probabilities, scale = get_color_statistics(image)
     print("Pitch Probabilities:", pitch_probabilities)
     print_trend(trend)
+    print("Scale:", scale)
 
     data_to_send = {
         "pitch_probabilities": pitch_probabilities,
@@ -139,7 +140,7 @@ class DrawingApp:
 
         # Apply a theme
         self.style = ttk.Style()
-        self.style.theme_use('default')  
+        self.style.theme_use('aqua')  
         self.style.configure("Horizontal.TScale", background='#333', foreground='white', troughcolor='#555', sliderlength=20, borderwidth=1)
         self.style.map("Horizontal.TScale", background=[('active', '#555')])
         self.style.configure("Eraser.TButton", font=('Helvetica', 13))
@@ -194,7 +195,7 @@ class DrawingApp:
 
         if abs(up_count - down_count) < 10 and constant_count < 10:
             return VARYING
-        if up_count > dir_len / 2:
+        elif up_count > dir_len / 2:
             return UP
         elif down_count > dir_len / 2:
             return DOWN
