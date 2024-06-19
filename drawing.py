@@ -91,8 +91,23 @@ def get_color_statistics(image):
 
     return pitch_probabilities
 
+def print_trend(trend):
+    if trend == UP:
+        print("Trend: Up")
+    elif trend == DOWN:
+        print("Trend: Down")
+    elif trend == CONSTANT:
+        print("Trend: Constant")
+    elif trend == VARYING:
+        print("Trend: Varying")
+    else:
+        print("Trend: Off")
+
+
 def analyse_send_data(image, trend):
     pitch_probabilities = get_color_statistics(image)
+    print("Pitch Probabilities:", pitch_probabilities)
+    print_trend(trend)
 
     data_to_send = {
         "pitch_probabilities": pitch_probabilities,
@@ -101,9 +116,9 @@ def analyse_send_data(image, trend):
 
     data = json.dumps(data_to_send)
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect(('localhost', 12345))  # Receiver's address and port
-        s.sendall(data.encode('utf-8'))
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    #     s.connect(('localhost', 12345))  # Receiver's address and port
+    #     s.sendall(data.encode('utf-8'))
 
     return 
 
@@ -162,18 +177,6 @@ class DrawingApp:
         else:
             return VARYING
         
-    def print_trend(self):
-        if self.trend == UP:
-            print("Trend: Up")
-        elif self.trend == DOWN:
-            print("Trend: Down")
-        elif self.trend == CONSTANT:
-            print("Trend: Constant")
-        elif self.trend == VARYING:
-            print("Trend: Varying")
-        else:
-            print("Trend: Off")
-
     def paint(self, event):
         x, y = event.x, event.y
         size = self.brush_thickness.get()
@@ -202,14 +205,14 @@ class DrawingApp:
                 self.trend = self.analyze_trend()
                 self.directions = []
                 # self.directions.pop(0)
-                self.print_trend()
+                # print_trend(self.trend)
 
         self.last_pos = (x, y)  
 
     def reset_last_pos(self, event):
         self.last_pos = None  
         self.trend = OFF
-        self.print_trend()
+        # print_trend(self.trend)
 
     def capture_canvas_content(self):
         def capture_and_analyze():
@@ -219,11 +222,10 @@ class DrawingApp:
             y1 = y + self.canvas.winfo_height()
             image = ImageGrab.grab(bbox=(x, y, x1, y1))
             
-            analyse_send_data(np.array(image))
+            analyse_send_data(np.array(image), self.trend)
 
         analysis_thread = threading.Thread(target=capture_and_analyze)
         analysis_thread.start()
-        # capture_and_analyze()
         self.root.after(self.capture_delay, self.capture_canvas_content)
 
 def main():
