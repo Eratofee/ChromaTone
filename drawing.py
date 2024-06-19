@@ -1,13 +1,12 @@
-from tkinter import Button, Canvas, Frame, Tk, ttk, Scale, HORIZONTAL, TRUE, ROUND
+from tkinter import Canvas, Frame, Tk, ttk, HORIZONTAL, TRUE, ROUND
 from functools import partial
-from tkinter.colorchooser import askcolor  # Import the color chooser
+from tkinter.colorchooser import askcolor 
 from PIL import ImageGrab
 import numpy as np
 import cv2
 import threading
 import socket
 import json
-
 
 UP = 0
 DOWN = 1
@@ -16,7 +15,7 @@ CONSTANT = 3
 OFF = 4
 
 color_ranges = {
-    'red': [(0, 10), (166, 180)],  # Red is split into two ranges [0, 10] and [166, 180
+    'red': [(0, 10), (166, 180)], 
     'orange': (11, 23),
     'yellow': (24, 37),
     'spring_green': (38, 55),
@@ -57,7 +56,7 @@ def get_color_statistics(image):
     hue_channel, saturation_channel, value_channel = cv2.split(image)
     
     color_counts = {color: 0 for color in color_ranges}
-    color_counts['white'] = 0  # Adding white as a color
+    color_counts['white'] = 0  
     
     black_mask = value_channel < 25
     
@@ -117,7 +116,7 @@ def analyse_send_data(image, trend):
     data = json.dumps(data_to_send)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect(('localhost', 12345))  # Receiver's address and port
+        s.connect(('localhost', 12345))  
         s.sendall(data.encode('utf-8'))
 
     return 
@@ -125,34 +124,47 @@ def analyse_send_data(image, trend):
 class DrawingApp:
     def __init__(self, root):
         self.root = root
-        self.canvas = Canvas(root, bg='black', width=500, height=500)
-        self.canvas.pack()
-        self.color = 'black'  # Default color
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
+        # Apply a theme
+        self.style = ttk.Style()
+        self.style.theme_use('aqua')  
+        self.style.configure("Horizontal.TScale", background='#333', foreground='white', troughcolor='#555', sliderlength=20, borderwidth=1)
+        self.style.map("Horizontal.TScale", background=[('active', '#555')])
+
+        # Customize button style
+        self.style.configure('TButton', font=('Helvetica', 12), background='#333', foreground='white', borderwidth=1)
+        self.style.map('TButton', background=[('active', '#555')])
 
         self.color_frame = Frame(root)
-        self.color_frame.pack()
+        self.color_frame.pack(side='top', fill='x', padx=10, pady=5)
 
-        self.color_wheel_btn = Button(self.color_frame, text='Choose Color', command=self.choose_color)
-        self.color_wheel_btn.pack(side='left')
+        self.color_wheel_btn = ttk.Button(self.color_frame, text='Choose Color', command=self.choose_color)
+        self.color_wheel_btn.pack(side='left', padx=5)
 
         # Brush Type Selection
-        self.brush_type = ttk.Combobox(self.color_frame, values=["Oval", "Square", "Line"], state="readonly")
-        self.brush_type.set("Oval")  # default value
-        self.brush_type.pack(side='left')
+        self.brush_type = ttk.Combobox(self.color_frame, values=[ "Line", "Oval", "Square"], state="readonly")
+        self.brush_type.set("Line") 
+        self.brush_type.pack(side='left', padx=5)
 
         # Brush Thickness Selection
         self.brush_thickness_label = ttk.Label(self.color_frame, text="Brush Thickness:")
-        self.brush_thickness_label.pack(side='left')
-        self.brush_thickness = Scale(self.color_frame, from_=1, to=10, orient=HORIZONTAL)
-        self.brush_thickness.set(2)  # default thickness
-        self.brush_thickness.pack(side='left')
+        self.brush_thickness_label.pack(side='left', padx=5)
+        self.brush_thickness = ttk.Scale(self.color_frame, from_=1, to=40, orient='horizontal', style="Horizontal.TScale")
+        self.brush_thickness.set(10)  # default thickness
+        self.brush_thickness.pack(side='left', padx=5)
+
+        self.canvas = Canvas(root, bg='black', width=screen_width, height=screen_height - self.color_frame.winfo_reqheight())
+        self.canvas.pack(padx=10, pady=5)
+        self.color = 'white'
 
         self.last_pos = None 
         self.directions = []
         self.trend = OFF
         self.canvas.bind('<B1-Motion>', self.paint)
-        self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos)  # Reset last_pos on mouse release
-        self.capture_delay = 5000  # Delay in milliseconds between captures
+        self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos) 
+        self.capture_delay = 5000  
         self.capture_canvas_content()
 
     def choose_color(self):
@@ -188,7 +200,7 @@ class DrawingApp:
             self.canvas.create_line(self.last_pos[0], self.last_pos[1], x, y, fill=self.color, width=size, capstyle=ROUND, smooth=TRUE, splinesteps=36)
         
         if self.last_pos:
-            dx = x - self.last_pos[0]
+            # dx = x - self.last_pos[0]
             dy = y - self.last_pos[1]
             
             if dy < 0:
