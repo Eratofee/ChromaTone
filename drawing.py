@@ -200,7 +200,7 @@ class DrawingApp:
         self.eraser_active = False
         self.canvas.bind('<B1-Motion>', self.paint)
         self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos) 
-        self.capture_delay = 5000  
+        self.capture_delay = 2000  
         self.capture_canvas_content()
 
     def choose_color(self):
