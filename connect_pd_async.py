@@ -5,6 +5,15 @@ import pandas as pd
 import numpy as np
 import ast
 from drawing import print_trend
+import mido
+from mido import Message, MidiFile, MidiTrack
+import time
+
+UP = 0
+DOWN = 1
+VARYING = 2
+CONSTANT = 3
+OFF = 4
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b", "g", "a_b", "a", "b_b", "b"]
 oktave = 5
@@ -12,23 +21,22 @@ MIDI_MULTIPLIER = oktave * 15
 
 midis = [i for i in range(MIDI_MULTIPLIER, MIDI_MULTIPLIER + len(PITCH_CLASSES))]
 translation_pit_2_midi = dict(zip(PITCH_CLASSES, midis))
-
 midi_motives = pd.read_csv("midi_motives.csv")
 
 
 class PizzaComm:
     def __init__(self, port_name):
         self.output_port_name = port_name
+        self.outport = mido.open_output(self.output_port_name)
 
     async def send_midi_note(self, note, velocity, duration):
-        pass
         # Send a note on message
-        # msg = Message('note_on', note=note, velocity=velocity)
-        # self.outport.send(msg)
-        # time.sleep(duration)
-        # # Send a note off message
-        # msg = Message('note_off', note=note, velocity=velocity)
-        # self.outport.send(msg)
+        msg = Message('note_on', note=note, velocity=velocity)
+        self.outport.send(msg)
+        time.sleep(duration)
+        # Send a note off message
+        msg = Message('note_off', note=note, velocity=velocity)
+        self.outport.send(msg)
 
 
 class TCPComm:
@@ -37,11 +45,11 @@ class TCPComm:
         self.sock.bind((ip, port))
         self.sock.listen()
         self.sock.setblocking(False)
-        self.probabilities = None
-        self.trend = None
-        self.scale = 'min'
+        # self.probabilities = None
+        # self.trend = None
+        # self.scale = 'min'
 
-    async def check_for_incoming_data(self):
+    async def check_for_incoming_data(self, motif_gen):
         loop = asyncio.get_running_loop()
         while True:
             try:
@@ -60,16 +68,40 @@ class TCPComm:
                             await asyncio.sleep(0.1)
                     if data_buffer:
                         received_data = json.loads(data_buffer.decode('utf-8'))
-                        self.probabilities = received_data.get("pitch_probabilities")
-                        self.trend = received_data.get("trend")
-                        self.scale = received_data.get("scale")
+                        probabilities = received_data.get("pitch_probabilities")
+                        trend = received_data.get("trend")
+                        scale = received_data.get("scale")
+                        duration = received_data.get("duration")
+                        motif_gen.set_probabilities(probabilities)
+                        motif_gen.set_trend(trend)
+                        motif_gen.set_scale(scale)
+                        motif_gen.set_duration(duration)
                         print("Received data")
-                        print("Probabilities:", self.probabilities)
-                        print_trend(self.trend)
-                        print("Scale:", self.scale)
+                        print("Probabilities:", probabilities)
+                        print_trend(trend)
+                        print("Scale:", scale)
             except socket.error as e:
                 print('Error:', e)
             await asyncio.sleep(0.1)
+
+class MotifGen:
+    def __init__(self):
+        self.probabilities = None
+        self.scale = None
+        self.trend = CONSTANT
+        self.duration = 0.5
+
+    def set_probabilities(self, probabilities):
+        self.probabilities = probabilities
+
+    def set_trend(self, trend):
+        self.trend = trend
+
+    def set_scale(self, scale):
+        self.scale = scale
+
+    def set_duration(self, duration):
+        self.duration = duration
 
     def choose_motif(self):
         if self.probabilities:
@@ -84,30 +116,40 @@ class TCPComm:
                 return None
             random_row = df_filtered.sample()
             midi_notes = random_row["midi_notes"].iloc[0]
-            return np.array(ast.literal_eval(midi_notes)) + key_ind
+            return np.array(ast.literal_eval(midi_notes)) + key_ind, self.duration
         else:
             print("Failed to generate note")
-            return None
+            return None, None
 
 
-async def send_notes(pizza_comm, tcp_comm):
+async def send_notes(pizza_comm, motif_gen):
     while True:
-        notes = tcp_comm.choose_motif()
-        if notes is not None:
+        print("before choose_motif")
+        notes, duration = motif_gen.choose_motif()
+
+        print("after choose_motif")
+        if notes is not None and duration is not None:
+            if duration >= 2:
+                notes = notes[0:4]
+            print("inside if notes")
             for note in notes:
+                print("inside for notes")
                 print(note)
-                await asyncio.sleep(2)
-                await pizza_comm.send_midi_note(note, 100, 0.5)
+                await asyncio.sleep(0.1)
+                vel = np.random.randint(60, 111)
+                await pizza_comm.send_midi_note(note, vel, duration)
         else:
+            print("no notes, waiting")
             await asyncio.sleep(1)
 
 
 async def main():
     pizza_comm = PizzaComm('IAC pizza')
     tcp_comm = TCPComm('localhost', 12346)
+    motif_gen = MotifGen()
     await asyncio.gather(
-        tcp_comm.check_for_incoming_data(),
-        send_notes(pizza_comm, tcp_comm),
+        tcp_comm.check_for_incoming_data(motif_gen),
+        send_notes(pizza_comm, motif_gen),
     )
 
 

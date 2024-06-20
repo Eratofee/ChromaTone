@@ -7,6 +7,8 @@ import cv2
 import threading
 import socket
 import json
+import time
+import math
 
 UP = 0
 DOWN = 1
@@ -111,16 +113,32 @@ def print_trend(trend):
         print("Trend: Off")
 
 
-def analyse_send_data(image, trend):
+def analyse_send_data(image, trend, speed_measure):
     pitch_probabilities, scale = get_color_statistics(image)
+
+    if speed_measure > 7000:
+        duration = 0.1
+    elif speed_measure > 5000:
+        duration = 0.25
+    elif speed_measure > 3000:
+        duration = 0.4
+    elif speed_measure > 1000:
+        duration = 0.8
+    elif speed_measure > 500:
+        duration = 1
+    else:
+        duration = 2
+
     print("Pitch Probabilities:", pitch_probabilities)
     print_trend(trend)
     print("Scale:", scale)
+    print("Duration:", duration)
 
     data_to_send = {
         "pitch_probabilities": pitch_probabilities,
         "scale": scale,
-        "trend": trend
+        "trend": trend,
+        "duration": duration
     }
 
     data = json.dumps(data_to_send)
@@ -134,6 +152,7 @@ def analyse_send_data(image, trend):
 class DrawingApp:
     def __init__(self, root):
         self.root = root
+        self.last_pos = (0, 0)
         root.title('ChromaTone')
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
@@ -175,6 +194,8 @@ class DrawingApp:
 
         self.last_pos = None 
         self.directions = []
+        self.speeds = []
+        self.speed_measure = 0
         self.trend = CONSTANT
         self.eraser_active = False
         self.canvas.bind('<B1-Motion>', self.paint)
@@ -214,7 +235,25 @@ class DrawingApp:
 
     def paint(self, event):
         paint_color = 'black' if self.eraser_active else self.color
+        current_time = time.time()
 
+        if hasattr(self, 'last_time'):
+            if self.last_pos != None:
+                time_diff = current_time - self.last_time
+                distance = math.sqrt((event.x - self.last_pos[0])**2 + (event.y - self.last_pos[1])**2)
+                
+                # Avoid division by zero
+                if time_diff > 0:
+                    speed_measure = distance / time_diff
+                    # Invert the speed measure to match the requested behavior
+                    # speed_measure = 1 / speed if speed != 0 else float('inf')
+                    self.speeds.append(speed_measure)
+                    # print("Speed Measure:", speed_measure)
+                # else:
+                    # print("Time difference is too small.")
+            # else:
+                # print("First paint event, no speed measure.")
+    
         x, y = event.x, event.y
         size = self.brush_thickness.get()
         if self.brush_type.get() == "Oval":
@@ -241,11 +280,15 @@ class DrawingApp:
                 self.directions.append(direction)
                 if len(self.directions) > 100:
                     self.trend = self.analyze_trend()
+                    self.speed_measure = np.mean(self.speeds)
+                    print("Speed: ", self.speed_measure)
                     self.directions = []
+                    self.speeds = []
                     # self.directions.pop(0)
                     # print_trend(self.trend)
 
         self.last_pos = (x, y)
+        self.last_time = current_time
 
     def reset_last_pos(self, event):
         self.last_pos = None  
@@ -260,7 +303,7 @@ class DrawingApp:
             y1 = y + self.canvas.winfo_height()
             image = ImageGrab.grab(bbox=(x, y, x1, y1))
             
-            analyse_send_data(np.array(image), self.trend)
+            analyse_send_data(np.array(image), self.trend, self.speed_measure)
 
         analysis_thread = threading.Thread(target=capture_and_analyze)
         analysis_thread.start()
