@@ -23,6 +23,8 @@ midis = [i for i in range(MIDI_MULTIPLIER, MIDI_MULTIPLIER + len(PITCH_CLASSES))
 translation_pit_2_midi = dict(zip(PITCH_CLASSES, midis))
 midi_motives = pd.read_csv("midi_motives.csv")
 
+HARPCHANNEL = 1
+DRONECHANNEL = 2
 
 class PizzaComm:
     def __init__(self, port_name):
@@ -31,19 +33,19 @@ class PizzaComm:
 
     async def send_midi_note(self, note, velocity, duration):
         # Send a note on message
-        msg = Message('note_on', note=note, velocity=velocity)
+        msg = Message('note_on', note=note, velocity=velocity, channel=HARPCHANNEL)
         self.outport.send(msg)
         time.sleep(duration)
         # Send a note off message
-        msg = Message('note_off', note=note, velocity=velocity)
+        msg = Message('note_off', note=note, velocity=velocity, channel=HARPCHANNEL)
         self.outport.send(msg)
 
     async def send_midi_note_on(self, note, velocity):
-        msg = Message('note_on', note=note, velocity=velocity)
+        msg = Message('note_on', note=note, velocity=velocity, channel=DRONECHANNEL)
         self.outport.send(msg)
 
     async def send_midi_note_off(self, note, velocity):
-        msg = Message('note_off', note=note, velocity=velocity)
+        msg = Message('note_off', note=note, velocity=velocity, channel=DRONECHANNEL)
         self.outport.send(msg)
 
 class TCPComm:
@@ -52,9 +54,6 @@ class TCPComm:
         self.sock.bind((ip, port))
         self.sock.listen()
         self.sock.setblocking(False)
-        # self.probabilities = None
-        # self.trend = None
-        # self.scale = 'min'
 
     async def check_for_incoming_data(self, motif_gen):
         loop = asyncio.get_running_loop()
