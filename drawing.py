@@ -140,7 +140,7 @@ class DrawingApp:
 
         # Apply a theme
         self.style = ttk.Style()
-        self.style.theme_use('aqua')  
+        self.style.theme_use('default')  
         self.style.configure("Horizontal.TScale", background='#333', foreground='white', troughcolor='#555', sliderlength=20, borderwidth=1)
         self.style.map("Horizontal.TScale", background=[('active', '#555')])
         self.style.configure("Eraser.TButton", font=('Helvetica', 13))
