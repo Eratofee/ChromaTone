@@ -84,9 +84,10 @@ class TCPComm:
                         motif_gen.set_scale(scale)
                         motif_gen.set_duration(duration)
                         print("Received data")
-                        print("Probabilities:", probabilities)
-                        print_trend(trend)
-                        print("Scale:", scale)
+                        # print("Probabilities:", probabilities)
+                        # print_trend(trend)
+                        # print("Scale:", scale)
+                        print("Duration:", duration)
             except socket.error as e:
                 print('Error:', e)
             await asyncio.sleep(0.1)
@@ -143,23 +144,23 @@ async def send_notes(pizza_comm, motif_gen):
         return motif_gen.get_trend() != trend
 
     while True:
-        print("before choose_motif")
+        print("Choosing motif")
         notes, duration, trend, key = motif_gen.choose_motif()
         print("Key: ", key)
-        print("after choose_motif")
         if notes is not None and duration is not None:
-            print("inside if notes")
             await pizza_comm.send_midi_note_on(key, 100)
             for note in notes:
-                print("inside for notes")
                 print(note)
                 await asyncio.sleep(0.1)
                 vel = np.random.randint(60, 100)
                 await pizza_comm.send_midi_note(note, vel, duration)
                 if trend_changed(trend):
+                    print("trend changed")
                     break
-                if duration_changed(duration):
+                elif duration_changed(duration):
+                    print("duration changed")
                     duration = motif_gen.get_duration()
+
             await pizza_comm.send_midi_note_off(key, 70)
         else:
             print("no notes, waiting")
