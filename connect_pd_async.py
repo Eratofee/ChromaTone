@@ -154,10 +154,10 @@ async def send_notes(pizza_comm, motif_gen):
                 await asyncio.sleep(0.1)
                 vel = np.random.randint(60, 100)
                 await pizza_comm.send_midi_note(note, vel, duration)
-                if trend_changed(trend):
-                    print("trend changed")
-                    break
-                elif duration_changed(duration):
+                # if trend_changed(trend):
+                #     print("trend changed")
+                #     break
+                if duration_changed(duration):
                     print("duration changed")
                     duration = motif_gen.get_duration()
 
@@ -168,7 +168,8 @@ async def send_notes(pizza_comm, motif_gen):
 
 
 async def main():
-    pizza_comm = PizzaComm('IAC pizza')
+    # pizza_comm = PizzaComm('IAC pizza')
+    pizza_comm = PizzaComm('pizza 2')
     tcp_comm = TCPComm('localhost', 12346)
     motif_gen = MotifGen()
     await asyncio.gather(

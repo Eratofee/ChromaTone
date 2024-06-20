@@ -117,17 +117,19 @@ def analyse_send_data(image, trend, speed_measure):
     pitch_probabilities, scale = get_color_statistics(image)
 
     if speed_measure > 7000:
-        duration = 0.1
+        duration = 0.01
     elif speed_measure > 5000:
-        duration = 0.25
+        duration = 0.05
     elif speed_measure > 3000:
-        duration = 0.4
+        duration = 0.1
     elif speed_measure > 1000:
-        duration = 0.8
+        duration = 0.2
     elif speed_measure > 500:
-        duration = 1
+        duration = 0.3
+    elif speed_measure > 100:
+        duration = 0.4
     else:
-        duration = 2
+        duration = 0.6
 
     print("Pitch Probabilities:", pitch_probabilities)
     print_trend(trend)
