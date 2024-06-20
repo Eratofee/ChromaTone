@@ -96,7 +96,7 @@ class MotifGen:
         self.probabilities = None
         self.scale = None
         self.trend = CONSTANT
-        self.duration = 0.5
+        self.duration = 0.35
 
     def set_probabilities(self, probabilities):
         self.probabilities = probabilities

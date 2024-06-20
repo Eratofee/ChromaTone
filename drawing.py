@@ -123,13 +123,13 @@ def analyse_send_data(image, trend, speed_measure):
     elif speed_measure > 3000:
         duration = 0.1
     elif speed_measure > 1000:
-        duration = 0.2
+        duration = 0.15
     elif speed_measure > 500:
-        duration = 0.3
+        duration = 0.25
     elif speed_measure > 100:
-        duration = 0.4
+        duration = 0.3
     else:
-        duration = 0.6
+        duration = 0.35
 
     print("Pitch Probabilities:", pitch_probabilities)
     print_trend(trend)
