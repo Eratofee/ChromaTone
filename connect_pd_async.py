@@ -27,26 +27,28 @@ HARPCHANNEL = 1
 DRONECHANNEL = 2
 
 class PizzaComm:
-    def __init__(self, port_name):
-        self.output_port_name = port_name
-        self.outport = mido.open_output(self.output_port_name)
+    def __init__(self, port_name_harp, port_name_drone):
+        self.output_port_name_harp = port_name_harp
+        self.output_port_name_drone = port_name_drone
+        self.outport_harp = mido.open_output(self.output_port_name_harp)
+        self.outport_drone = mido.open_output(self.output_port_name_drone)
 
     async def send_midi_note(self, note, velocity, duration):
         # Send a note on message
-        msg = Message('note_on', note=note, velocity=velocity, channel=HARPCHANNEL)
-        self.outport.send(msg)
+        msg = Message('note_on', note=note, velocity=velocity)
+        self.outport_harp.send(msg)
         time.sleep(duration)
         # Send a note off message
-        msg = Message('note_off', note=note, velocity=velocity, channel=HARPCHANNEL)
-        self.outport.send(msg)
+        msg = Message('note_off', note=note, velocity=velocity)
+        self.outport_harp.send(msg)
 
     async def send_midi_note_on(self, note, velocity):
-        msg = Message('note_on', note=note, velocity=velocity, channel=DRONECHANNEL)
-        self.outport.send(msg)
+        msg = Message('note_on', note=note, velocity=velocity)
+        self.outport_drone.send(msg)
 
     async def send_midi_note_off(self, note, velocity):
-        msg = Message('note_off', note=note, velocity=velocity, channel=DRONECHANNEL)
-        self.outport.send(msg)
+        msg = Message('note_off', note=note, velocity=velocity)
+        self.outport_drone.send(msg)
 
 class TCPComm:
     def __init__(self, ip, port):
@@ -167,8 +169,8 @@ async def send_notes(pizza_comm, motif_gen):
 
 
 async def main():
-    # pizza_comm = PizzaComm('IAC pizza')
-    pizza_comm = PizzaComm('pizza 2')
+    # pizza_comm = PizzaComm('IAC pizza', 'IAC drone')
+    pizza_comm = PizzaComm('pizza 2', 'drone')
     tcp_comm = TCPComm('localhost', 12346)
     motif_gen = MotifGen()
     await asyncio.gather(
