@@ -48,7 +48,6 @@ class TCPComm:
             try:
                 # Accept a new connection
                 conn, addr = await loop.sock_accept(self.sock)
-                print('Connected by', addr)
                 data_buffer = b""
                 with conn:
                     conn.setblocking(False)
@@ -77,10 +76,9 @@ class TCPComm:
                         motif_gen.set_trend(trend)
                         motif_gen.set_scale(scale)
                         motif_gen.set_duration(duration)
-                        print("Received data")
-                        print("Duration:", duration)
+                        print("CONNECT: Received data")
             except socket.error as e:
-                print('Error:', e)
+                print('CONNETC: Error:', e)
             await asyncio.sleep(0.1)
 
 async def send_notes(pizza_comm, motif_gen):
@@ -91,9 +89,9 @@ async def send_notes(pizza_comm, motif_gen):
         return motif_gen.get_trend() != trend
 
     while True:
-        print("Choosing motif")
+        print("CONNECT: Choosing motif")
         notes, duration, trend, key = motif_gen.choose_motif()
-        print("Key: ", key)
+        print("CONNECT: Key: ", key)
         if notes is not None and duration is not None:
             await pizza_comm.send_midi_note_on(key, 100)
             for note in notes:
@@ -102,11 +100,10 @@ async def send_notes(pizza_comm, motif_gen):
                 vel = np.random.randint(60, 100)
                 await pizza_comm.send_midi_note(note, vel, duration)
                 if duration_changed(duration):
-                    print("duration changed")
                     duration = motif_gen.get_duration()
             await pizza_comm.send_midi_note_off(key, 70)
         else:
-            print("no notes, waiting")
+            print("CONNECT: no notes, waiting")
             await asyncio.sleep(1)
 
 async def main():

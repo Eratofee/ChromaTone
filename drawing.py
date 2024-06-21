@@ -212,6 +212,7 @@ def print_analysis_results(pitch_probabilities, trend, scale, duration):
         scale: The musical scale determined from the analysis.
         duration: The duration of the note, influenced by the speed of drawing.
     """
+    print("Drawing App:")
     print("Pitch Probabilities:", pitch_probabilities)
     print_trend(trend)
     print("Scale:", scale)

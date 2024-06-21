@@ -64,7 +64,7 @@ class MotifGen:
                 key_ind = np.argmax(self.probabilities)
                 key = PITCH_CLASSES[key_ind]
             
-            print("Key is", key)
+            print("MOTIF_GEN: Key is", key)
             
             # If trend is OFF, return None to indicate no motif should be generated
             if self.trend == OFF:
@@ -92,6 +92,6 @@ class MotifGen:
             return np.array(ast.literal_eval(midi_notes)) + key_ind, self.duration, self.trend, translation_pit_2_midi[key] - 24
         else:
             # If probabilities are not set, print an error message and return None
-            print("Failed to generate note")
+            print("MOTIF_GEN: Failed to generate note")
             return None, None, None, None
 
