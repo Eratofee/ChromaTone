@@ -1,10 +1,5 @@
 import pandas as pd
-import numpy as np
-from markov_chain import SecondOrderMarkovModel
-import random
-import ast
-
-
+from ChromaTone.markov.markov_chain import SecondOrderMarkovModel
 
 if __name__ == "__main__":
     scales = ["maj", "min"]
