@@ -47,7 +47,7 @@ class TCPComm:
         while True:
             try:
                 # Accept a new connection
-                conn, addr = await loop.sock_accept(self.sock)
+                conn, _ = await loop.sock_accept(self.sock)
                 data_buffer = b""
                 with conn:
                     conn.setblocking(False)
@@ -85,8 +85,8 @@ async def send_notes(pizza_comm, motif_gen):
     def duration_changed(duration):
         return motif_gen.get_duration() != duration
     
-    def trend_changed(trend):
-        return motif_gen.get_trend() != trend
+    # def trend_changed(trend):
+    #     return motif_gen.get_trend() != trend
 
     while True:
         print("CONNECT: Choosing motif")
