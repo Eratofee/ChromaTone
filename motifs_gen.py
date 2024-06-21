@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import ast
-from ChromaTone.markov.markov_chain import MarkovManager
+from markov.markov_chain import MarkovManager
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b", "g", "a_b", "a", "b_b", "b"]
 oktave = 5
@@ -9,14 +9,14 @@ MIDI_MULTIPLIER = oktave * 15
 
 midis = [i for i in range(MIDI_MULTIPLIER, MIDI_MULTIPLIER + len(PITCH_CLASSES))]
 translation_pit_2_midi = dict(zip(PITCH_CLASSES, midis))
-midi_motives = pd.read_csv("midi_motives.csv")
+midi_motives = pd.read_csv("motifs_df/midi_motives.csv")
 
 CONSTANT = 3
 OFF = 4
 
 class MotifGen:
     def __init__(self):
-        self.markov_manager = MarkovManager()
+        # self.markov_manager = MarkovManager()
         self.probabilities = None
         self.scale = None
         self.trend = CONSTANT

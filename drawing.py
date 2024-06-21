@@ -67,52 +67,45 @@ def sum_color_counts(color_counts):
     total_count = np.sum(list(color_counts.values()))
     return total_count
 
-def get_color_statistics(image):
-
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-
-    hue_channel, saturation_channel, value_channel = cv2.split(image)
-    
-    average_brightness = np.mean(value_channel)
-
-    scale = 'min'
-    if average_brightness < 127:
-        scale = 'min'
-    else:
-        scale = 'maj'
-
-    color_counts = {color: 0 for color in color_ranges}   
-    color_counts['white'] = 0  
-    
-    black_mask = value_channel < 25
-
-    white_mask = np.logical_and(value_channel > 204, saturation_channel < 25)
+def calculate_color_mask(hue_channel, color_ranges, black_mask, white_mask):
+    color_counts = {color: 0 for color in color_ranges}
     color_counts['white'] = np.sum(white_mask)
-    
+
     for color, ranges in color_ranges.items():
         if isinstance(ranges, tuple):
-            ranges = [ranges]  
+            ranges = [ranges]
         if color == 'red':
             red1 = np.logical_and(hue_channel >= 0, hue_channel <= 10)
             red2 = np.logical_and(hue_channel >= 166, hue_channel <= 180)
             color_mask = np.logical_or(red1, red2)
-            color_mask = np.logical_and(color_mask, np.logical_not(black_mask))
-            color_mask = np.logical_and(color_mask, np.logical_not(white_mask))
-            color_counts[color] += np.sum(color_mask)
         else:
+            color_mask = np.zeros_like(hue_channel, dtype=bool)
             for lower_bound, upper_bound in ranges:
-                color_mask = np.logical_and(hue_channel >= lower_bound, hue_channel <= upper_bound)
-                # Exclude black and white pixels from the color count
-                color_mask = np.logical_and(color_mask, np.logical_not(black_mask))
-                color_mask = np.logical_and(color_mask, np.logical_not(white_mask))
-                
-                color_counts[color] += np.sum(color_mask)
-            
-    temp_total = sum_color_counts(color_counts)
+                color_mask |= np.logical_and(hue_channel >= lower_bound, hue_channel <= upper_bound)
 
-    pitch_probabilities = []
-    for pitch in PITCH_CLASSES:
-        pitch_probabilities.append(color_counts[color_notes[pitch]]/temp_total)
+        color_mask = np.logical_and(color_mask, np.logical_not(black_mask))
+        color_mask = np.logical_and(color_mask, np.logical_not(white_mask))
+        color_counts[color] += np.sum(color_mask)
+
+    return color_counts
+
+def calculate_pitch_probabilities(color_counts, color_notes):
+    temp_total = sum(color_counts.values())
+    pitch_probabilities = [color_counts[color_notes[pitch]] / temp_total for pitch in PITCH_CLASSES]
+    return pitch_probabilities
+
+def get_color_statistics(image):
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    hue_channel, saturation_channel, value_channel = cv2.split(image)
+    average_brightness = np.mean(value_channel)
+
+    scale = 'min' if average_brightness < 127 else 'maj'
+
+    black_mask = value_channel < 25
+    white_mask = np.logical_and(value_channel > 204, saturation_channel < 25)
+
+    color_counts = calculate_color_mask(hue_channel, color_ranges, black_mask, white_mask)
+    pitch_probabilities = calculate_pitch_probabilities(color_counts, color_notes)
 
     return pitch_probabilities, scale
 
@@ -128,40 +121,31 @@ def print_trend(trend):
     else:
         print("Trend: Off")
 
+def determine_color(hue, saturation, value):
+    if value < 25:
+        return None
+    elif value > 204 and saturation < 25:
+        return 'white'
+    else:
+        for color, ranges in color_ranges.items():
+            if isinstance(ranges, tuple):
+                ranges = [ranges]
+            if color == 'red':
+                if (hue >= 0 and hue <= 10) or (hue >= 166 and hue <= 180):
+                    return color
+            else:
+                for lower_bound, upper_bound in ranges:
+                    if hue >= lower_bound and hue <= upper_bound:
+                        return color
+    return None
+
 def active_color_probabilities(active_color):
-    print("Active Color:", active_color)
     hsv_color = colorutils.hex_to_hsv(active_color)
     hue = hsv_color[0] / 2
     saturation = hsv_color[1] * 255
     value = hsv_color[2] * 255
-    
-    print("Hue:", hue)
-    print("Saturation:", saturation)
-    print("Value:", value)
 
-    color_str = None
-
-    if value < 25:
-        color_str = None
-    elif value > 204 and saturation < 25:
-        color_str = 'white'
-    else:
-
-        for color, ranges in color_ranges.items():
-            if isinstance(ranges, tuple):
-                ranges = [ranges]  
-            if color == 'red':
-                if (hue >= 0 and hue <= 10) or (hue >= 166 and hue <= 180):
-                    color_str = color
-                    break
-            else:
-                for lower_bound, upper_bound in ranges:
-                    if hue >= lower_bound and hue <= upper_bound:
-                        color_str = color
-                        break
-
-    print("Active Color Str:", color_str)
-    
+    color_str = determine_color(hue, saturation, value)
     return notes_colors[color_str] if color_str else None
 
 
@@ -172,9 +156,6 @@ def analyse_send_data(image, trend, speed_measure, active_color_flag, active_col
         if key == None:
             active_color_flag = False
 
-    print("Active Color Flag:", active_color_flag)
-    print("Active Color:", key)
-    print("\n")
     pitch_probabilities, scale = get_color_statistics(image)
 
     if speed_measure > 7000:
@@ -192,10 +173,10 @@ def analyse_send_data(image, trend, speed_measure, active_color_flag, active_col
     else:
         duration = 0.35
 
-    # print("Pitch Probabilities:", pitch_probabilities)
-    # print_trend(trend)
-    # print("Scale:", scale)
-    # print("Duration:", duration)
+    print("Pitch Probabilities:", pitch_probabilities)
+    print_trend(trend)
+    print("Scale:", scale)
+    print("Duration:", duration)
 
     data_to_send = {
         "pitch_probabilities": pitch_probabilities,
@@ -216,13 +197,18 @@ def analyse_send_data(image, trend, speed_measure, active_color_flag, active_col
 
 class DrawingApp:
     def __init__(self, root):
-        self.root = root
-        self.last_pos = (0, 0)
-        root.title('ChromaTone')
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
+        self.initialize_basic_attributes(root)
+        self.configure_style()
+        self.setup_ui_components()
+        self.bind_canvas_events()
+        self.initialize_other_attributes()
+        self.capture_canvas_content()
 
-        # Apply a theme
+    def initialize_basic_attributes(self, root):
+        self.root = root
+        root.title('ChromaTone')
+
+    def configure_style(self):
         self.style = ttk.Style()
         self.style.theme_use('default')  
         self.style.configure("Horizontal.TScale", background='#333', foreground='white', troughcolor='#555', sliderlength=20, borderwidth=1)
@@ -230,36 +216,55 @@ class DrawingApp:
         self.style.configure("Eraser.TButton", font=('Helvetica', 13))
         self.style.configure("ActiveEraser.TButton", font=('Helvetica', 13, 'bold'))
 
-        self.color_frame = Frame(root)
+    def setup_ui_components(self):
+        self.setup_color_frame()
+        self.setup_color_wheel()
+        self.setup_brush_type_selection()
+        self.setup_eraser_button()
+        self.setup_active_color_button()
+        self.setup_brush_thickness_selection()
+        self.setup_canvas()
+
+    def setup_color_frame(self):
+        self.color_frame = Frame(self.root)
         self.color_frame.pack(side='top', fill='x', padx=10, pady=5)
 
-
+    def setup_color_wheel(self):
         self.color_wheel_btn = ttk.Button(self.color_frame, text='Choose Color', command=self.choose_color)
         self.color_wheel_btn.pack(side='left', padx=5, in_=self.color_frame)
 
-        # Brush Type Selection
+    def setup_brush_type_selection(self):
         self.brush_type = ttk.Combobox(self.color_frame, values=[ "Line", "Oval", "Square"], state="readonly")
         self.brush_type.set("Line") 
         self.brush_type.pack(side='left', padx=5, in_=self.color_frame)
 
-        # Eraser Button
+    def setup_eraser_button(self):
         self.eraser_btn = ttk.Button(self.root, text='Eraser', style="Eraser.TButton", command=self.toggle_eraser)
         self.eraser_btn.pack(side='left', padx=5, in_=self.color_frame)
 
+    def setup_active_color_button(self):
         self.active_color_btn = ttk.Button(self.root, text='Active Color', style="Eraser.TButton", command=self.toggle_active_color)
         self.active_color_btn.pack(side='left', padx=5, in_=self.color_frame)
 
-        # Brush Thickness Selection
+    def setup_brush_thickness_selection(self):
         self.brush_thickness_label = ttk.Label(self.color_frame, text="Thickness:")
         self.brush_thickness_label.pack(side='left', padx=5, in_=self.color_frame)
         self.brush_thickness = ttk.Scale(self.color_frame, from_=1, to=40, orient='horizontal', style="Horizontal.TScale")
         self.brush_thickness.set(10)  # default thickness
         self.brush_thickness.pack(side='left', padx=5, in_=self.color_frame)
 
-        self.canvas = Canvas(root, bg='black', width=screen_width, height=screen_height - self.color_frame.winfo_reqheight())
+    def setup_canvas(self):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        self.canvas = Canvas(self.root, bg='black', width=screen_width, height=screen_height - self.color_frame.winfo_reqheight())
         self.canvas.pack(padx=10, pady=5)
-        self.color = '#FFFFFF'
 
+    def bind_canvas_events(self):
+        self.canvas.bind('<B1-Motion>', self.paint)
+        self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos)
+
+    def initialize_other_attributes(self):
+        self.color = '#FFFFFF'
         self.active_color_flag = False
         self.last_pos = None 
         self.directions = []
@@ -267,10 +272,8 @@ class DrawingApp:
         self.speed_measure = 0
         self.trend = CONSTANT
         self.eraser_active = False
-        self.canvas.bind('<B1-Motion>', self.paint)
-        self.canvas.bind('<ButtonRelease-1>', self.reset_last_pos) 
+        self.direction_speed_analysis_limit = 100
         self.capture_delay = 2000  
-        self.capture_canvas_content()
 
     def choose_color(self):
         color_code = askcolor(title="Choose color")[1]
@@ -296,7 +299,6 @@ class DrawingApp:
 
     def toggle_eraser(self):
         self.eraser_active = not self.eraser_active
-        
         if self.eraser_active:
             self.eraser_btn.configure(style="ActiveEraser.TButton")
         else:
@@ -304,25 +306,31 @@ class DrawingApp:
 
     def toggle_active_color(self):
         self.active_color_flag = not self.active_color_flag
-        
         if self.active_color_flag:
             self.active_color_btn.configure(style="ActiveEraser.TButton")
         else:
             self.active_color_btn.configure(style="Eraser.TButton")
 
     def paint(self, event):
-        paint_color = '#000000' if self.eraser_active else self.color
+        paint_color = self.determine_paint_color()
         current_time = time.time()
+        self.calculate_speed(current_time, event)
+        self.draw_shape(event, paint_color)
+        self.analyze_direction_and_speed(event)
+        self.update_position_and_time(event, current_time)
 
-        if hasattr(self, 'last_time'):
-            if self.last_pos != None:
-                time_diff = current_time - self.last_time
-                distance = math.sqrt((event.x - self.last_pos[0])**2 + (event.y - self.last_pos[1])**2)
+    def determine_paint_color(self):
+        return '#000000' if self.eraser_active else self.color
 
-                if time_diff > 0:
-                    speed_measure = distance / time_diff
-                    self.speeds.append(speed_measure)
-    
+    def calculate_speed(self, current_time, event):
+        if hasattr(self, 'last_time') and self.last_pos is not None:
+            time_diff = current_time - self.last_time
+            distance = math.sqrt((event.x - self.last_pos[0])**2 + (event.y - self.last_pos[1])**2)
+            if time_diff > 0:
+                speed_measure = distance / time_diff
+                self.speeds.append(speed_measure)
+
+    def draw_shape(self, event, paint_color):
         x, y = event.x, event.y
         size = self.brush_thickness.get()
         if self.brush_type.get() == "Oval":
@@ -331,44 +339,50 @@ class DrawingApp:
             self.canvas.create_rectangle(x-size, y-size, x+size, y+size, fill=paint_color, outline=paint_color)
         elif self.brush_type.get() == "Line" and self.last_pos:
             self.canvas.create_line(self.last_pos[0], self.last_pos[1], x, y, fill=paint_color, width=size, capstyle=ROUND, smooth=TRUE, splinesteps=36)
-        
-        if not self.eraser_active:
-            if self.last_pos:
-                dy = y - self.last_pos[1]
-                
-                if dy < 0:
-                    direction = UP
-                elif dy > 0:
-                    direction = DOWN
-                else:
-                    direction = CONSTANT
-                
 
-                self.directions.append(direction)
-                if len(self.directions) > 100:
-                    self.trend = self.analyze_trend()
-                    self.speed_measure = np.mean(self.speeds)
-                    print("Speed: ", self.speed_measure)
-                    self.directions = []
-                    self.speeds = []
+    def analyze_direction_and_speed(self, event):
+        if not self.eraser_active and self.last_pos:
+            dy = event.y - self.last_pos[1]
+            if dy < 0:
+                direction = UP
+            elif dy > 0:
+                direction = DOWN
+            else:
+                direction = CONSTANT
 
-        self.last_pos = (x, y)
+            self.directions.append(direction)
+            if len(self.directions) > self.direction_speed_analysis_limit:
+                self.trend = self.analyze_trend()
+                self.speed_measure = np.mean(self.speeds)
+                self.directions = []
+                self.speeds = []
+
+    def update_position_and_time(self, event, current_time):
+        self.last_pos = (event.x, event.y)
         self.last_time = current_time
 
     def reset_last_pos(self, event):
         self.last_pos = None
 
-    def capture_canvas_content(self):
-        def capture_and_analyze():
-            x = self.root.winfo_rootx() + self.canvas.winfo_x()
-            y = self.root.winfo_rooty() + self.canvas.winfo_y()
-            x1 = x + self.canvas.winfo_width()
-            y1 = y + self.canvas.winfo_height()
-            image = ImageGrab.grab(bbox=(x, y, x1, y1))
-            print("Color sent to analysis:", self.color)
-            analyse_send_data(np.array(image), self.trend, self.speed_measure, self.active_color_flag, self.color)
+    def capture(self):
+        x = self.root.winfo_rootx() + self.canvas.winfo_x()
+        y = self.root.winfo_rooty() + self.canvas.winfo_y()
+        x1 = x + self.canvas.winfo_width()
+        y1 = y + self.canvas.winfo_height()
+        return ImageGrab.grab(bbox=(x, y, x1, y1))
 
-        analysis_thread = threading.Thread(target=capture_and_analyze)
+    def analyze(self, image):
+        try:
+            analyse_send_data(np.array(image), self.trend, self.speed_measure, self.active_color_flag, self.color)
+        except Exception as e:
+            print(f"Error during analysis: {e}")
+
+    def capture_and_analyze(self):
+        image = self.capture()
+        self.analyze(image)
+
+    def capture_canvas_content(self):
+        analysis_thread = threading.Thread(target=self.capture_and_analyze)
         analysis_thread.start()
         self.root.after(self.capture_delay, self.capture_canvas_content)
 
