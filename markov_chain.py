@@ -35,6 +35,8 @@ class SecondOrderMarkovModel:
             raise ValueError("start_notes must contain exactly two notes")
         
         sequence = list(start_notes)
+        default_note = sequence[1]
+        print("default note", default_note)
         
         for _ in range(length - 2):
             state = (sequence[-2], sequence[-1])
@@ -44,8 +46,9 @@ class SecondOrderMarkovModel:
                 next_note = random.choices(next_notes, probabilities)[0]
                 sequence.append(next_note)
             else:
-                print("Warning, no transition avaliuable")
-                break  # No transition available, stop the sequence
+                print("Warning, no transition available. Adding default note.")
+                sequence.append(default_note)
+                # break  # No transition available, stop the sequence
         
         return sequence
     
@@ -63,3 +66,19 @@ class SecondOrderMarkovModel:
             self.transition_probabilities = model_data['transition_probabilities']
 
 
+class MarkovManager:
+    def __init__(self):
+        self.models_dict = dict()
+        self._load_all_models()
+
+    def _load_all_models(self):
+        scales = ["maj", "min"]
+        trends = [0,1,2,3]
+        combinations = [(scale, trend) for scale in scales for trend in trends]
+        for scale, trend in combinations:
+            m = SecondOrderMarkovModel()
+            m.load_model(f'models/markov-{scale}-{trend}.pkl')
+            self.models_dict[f"{scale}-{trend}"] = m
+
+    def get_model(self, trend, scale):
+        return self.models_dict[f"{scale}-{trend}"]

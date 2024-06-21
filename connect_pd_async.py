@@ -8,6 +8,8 @@ from drawing import print_trend
 import mido
 from mido import Message, MidiFile, MidiTrack
 import time
+from ChromaTone.utils import sample_initial_note
+from markov_chain import MarkovManager
 
 UP = 0
 DOWN = 1
@@ -98,8 +100,10 @@ class TCPComm:
                 print('Error:', e)
             await asyncio.sleep(0.1)
 
+
 class MotifGen:
     def __init__(self):
+        self.markov_manager = MarkovManager()
         self.probabilities = None
         self.scale = None
         self.trend = CONSTANT
