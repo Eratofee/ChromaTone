@@ -50,7 +50,7 @@ class SecondOrderMarkovModel:
                 sequence.append(default_note)
                 # break  # No transition available, stop the sequence
         
-        return sequence
+        return np.array(sequence)
     
     def save_model(self, filename):
         with open(filename, 'wb') as f:

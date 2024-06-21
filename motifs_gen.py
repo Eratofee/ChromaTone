@@ -16,10 +16,10 @@ CONSTANT = 3
 OFF = 4
 
 class MotifGen:
-    def __init__(self):
+    def __init__(self, with_markov=False):
         self.markov_manager = MarkovManager()
         self.probabilities = None
-        self.with_markov: bool = False
+        self.with_markov: bool = with_markov
         self.scale = None
         self.trend = CONSTANT
         self.duration = 0.35
@@ -58,6 +58,7 @@ class MotifGen:
                 # Use the provided key
                 key = self.key
                 key_ind = PITCH_CLASSES.index(key)
+                key_ind = np.array([key_ind])
             else:
                 # Find the key index with the highest probability
                 key_ind = np.argmax(self.probabilities)

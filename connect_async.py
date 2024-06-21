@@ -113,7 +113,7 @@ async def main():
     # Initialize communication objects
     pizza_comm = PizzaComm('IAC pizza', 'IAC drone')
     tcp_comm = TCPComm('localhost', 12346)
-    motif_gen = MotifGen()
+    motif_gen = MotifGen(with_markov=True)
     # Start tasks for checking incoming data and sending notes
     await asyncio.gather(
         tcp_comm.check_for_incoming_data(motif_gen),
