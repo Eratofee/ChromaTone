@@ -9,6 +9,7 @@ import socket
 import json
 import time
 import math
+import colorutils
 
 UP = 0
 DOWN = 1
@@ -43,6 +44,21 @@ color_notes = {
     "a": "red",
     "b_b": "magenta",
     "b": "violet"
+}
+
+notes_colors = {
+    "white": "c",
+    "ocean": "d_b",
+    "turquoise": "d",
+    "orange": "e_b",
+    "yellow": "e",
+    "green": "f",
+    "spring_green": "g_b",
+    "blue": "g",
+    "cyan": "a_b",
+    "red": "a",
+    "magenta": "b_b",
+    "violet": "b"
 }
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b","g", "a_b", "a", "b_b", "b"]
@@ -112,8 +128,53 @@ def print_trend(trend):
     else:
         print("Trend: Off")
 
+def active_color_probabilities(active_color):
+    print("Active Color:", active_color)
+    hsv_color = colorutils.hex_to_hsv(active_color)
+    hue = hsv_color[0] / 2
+    saturation = hsv_color[1] * 255
+    value = hsv_color[2] * 255
+    
+    print("Hue:", hue)
+    print("Saturation:", saturation)
+    print("Value:", value)
 
-def analyse_send_data(image, trend, speed_measure):
+    color_str = None
+
+    if value < 25:
+        color_str = None
+    elif value > 204 and saturation < 25:
+        color_str = 'white'
+    else:
+
+        for color, ranges in color_ranges.items():
+            if isinstance(ranges, tuple):
+                ranges = [ranges]  
+            if color == 'red':
+                if (hue >= 0 and hue <= 10) or (hue >= 166 and hue <= 180):
+                    color_str = color
+                    break
+            else:
+                for lower_bound, upper_bound in ranges:
+                    if hue >= lower_bound and hue <= upper_bound:
+                        color_str = color
+                        break
+
+    print("Active Color Str:", color_str)
+    
+    return notes_colors[color_str] if color_str else None
+
+
+def analyse_send_data(image, trend, speed_measure, active_color_flag, active_color):
+    key = None
+    if active_color_flag:
+        key = active_color_probabilities(active_color)
+        if key == None:
+            active_color_flag = False
+
+    print("Active Color Flag:", active_color_flag)
+    print("Active Color:", key)
+    print("\n")
     pitch_probabilities, scale = get_color_statistics(image)
 
     if speed_measure > 7000:
@@ -131,16 +192,18 @@ def analyse_send_data(image, trend, speed_measure):
     else:
         duration = 0.35
 
-    print("Pitch Probabilities:", pitch_probabilities)
-    print_trend(trend)
-    print("Scale:", scale)
-    print("Duration:", duration)
+    # print("Pitch Probabilities:", pitch_probabilities)
+    # print_trend(trend)
+    # print("Scale:", scale)
+    # print("Duration:", duration)
 
     data_to_send = {
         "pitch_probabilities": pitch_probabilities,
         "scale": scale,
         "trend": trend,
-        "duration": duration
+        "duration": duration,
+        "active_color_flag": active_color_flag,
+        "key": key,
     }
 
     data = json.dumps(data_to_send)
@@ -183,6 +246,9 @@ class DrawingApp:
         self.eraser_btn = ttk.Button(self.root, text='Eraser', style="Eraser.TButton", command=self.toggle_eraser)
         self.eraser_btn.pack(side='left', padx=5, in_=self.color_frame)
 
+        self.active_color_btn = ttk.Button(self.root, text='Active Color', style="Eraser.TButton", command=self.toggle_active_color)
+        self.active_color_btn.pack(side='left', padx=5, in_=self.color_frame)
+
         # Brush Thickness Selection
         self.brush_thickness_label = ttk.Label(self.color_frame, text="Thickness:")
         self.brush_thickness_label.pack(side='left', padx=5, in_=self.color_frame)
@@ -192,8 +258,9 @@ class DrawingApp:
 
         self.canvas = Canvas(root, bg='black', width=screen_width, height=screen_height - self.color_frame.winfo_reqheight())
         self.canvas.pack(padx=10, pady=5)
-        self.color = 'white'
+        self.color = '#FFFFFF'
 
+        self.active_color_flag = False
         self.last_pos = None 
         self.directions = []
         self.speeds = []
@@ -235,26 +302,26 @@ class DrawingApp:
         else:
             self.eraser_btn.configure(style="Eraser.TButton")
 
+    def toggle_active_color(self):
+        self.active_color_flag = not self.active_color_flag
+        
+        if self.active_color_flag:
+            self.active_color_btn.configure(style="ActiveEraser.TButton")
+        else:
+            self.active_color_btn.configure(style="Eraser.TButton")
+
     def paint(self, event):
-        paint_color = 'black' if self.eraser_active else self.color
+        paint_color = '#000000' if self.eraser_active else self.color
         current_time = time.time()
 
         if hasattr(self, 'last_time'):
             if self.last_pos != None:
                 time_diff = current_time - self.last_time
                 distance = math.sqrt((event.x - self.last_pos[0])**2 + (event.y - self.last_pos[1])**2)
-                
-                # Avoid division by zero
+
                 if time_diff > 0:
                     speed_measure = distance / time_diff
-                    # Invert the speed measure to match the requested behavior
-                    # speed_measure = 1 / speed if speed != 0 else float('inf')
                     self.speeds.append(speed_measure)
-                    # print("Speed Measure:", speed_measure)
-                # else:
-                    # print("Time difference is too small.")
-            # else:
-                # print("First paint event, no speed measure.")
     
         x, y = event.x, event.y
         size = self.brush_thickness.get()
@@ -267,7 +334,6 @@ class DrawingApp:
         
         if not self.eraser_active:
             if self.last_pos:
-                # dx = x - self.last_pos[0]
                 dy = y - self.last_pos[1]
                 
                 if dy < 0:
@@ -277,7 +343,6 @@ class DrawingApp:
                 else:
                     direction = CONSTANT
                 
-                # print("Direction:", self.print_trend(direction)) 
 
                 self.directions.append(direction)
                 if len(self.directions) > 100:
@@ -286,16 +351,12 @@ class DrawingApp:
                     print("Speed: ", self.speed_measure)
                     self.directions = []
                     self.speeds = []
-                    # self.directions.pop(0)
-                    # print_trend(self.trend)
 
         self.last_pos = (x, y)
         self.last_time = current_time
 
     def reset_last_pos(self, event):
-        self.last_pos = None  
-        # self.trend = OFF
-        # print_trend(self.trend)
+        self.last_pos = None
 
     def capture_canvas_content(self):
         def capture_and_analyze():
@@ -304,8 +365,8 @@ class DrawingApp:
             x1 = x + self.canvas.winfo_width()
             y1 = y + self.canvas.winfo_height()
             image = ImageGrab.grab(bbox=(x, y, x1, y1))
-            
-            analyse_send_data(np.array(image), self.trend, self.speed_measure)
+            print("Color sent to analysis:", self.color)
+            analyse_send_data(np.array(image), self.trend, self.speed_measure, self.active_color_flag, self.color)
 
         analysis_thread = threading.Thread(target=capture_and_analyze)
         analysis_thread.start()

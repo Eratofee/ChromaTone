@@ -80,6 +80,11 @@ class TCPComm:
                         trend = received_data.get("trend")
                         scale = received_data.get("scale")
                         duration = received_data.get("duration")
+                        active_color_flag = received_data.get("active_color_flag")
+                        if active_color_flag:
+                            key = received_data.get("key")
+                            motif_gen.set_key(key)
+                        motif_gen.set_active_color_flag(active_color_flag)
                         motif_gen.set_probabilities(probabilities)
                         motif_gen.set_trend(trend)
                         motif_gen.set_scale(scale)
@@ -99,6 +104,14 @@ class MotifGen:
         self.scale = None
         self.trend = CONSTANT
         self.duration = 0.35
+        self.active_color_flag = False
+        self.key = None
+
+    def set_active_color_flag(self, active_color_flag):
+        self.active_color_flag = active_color_flag
+
+    def set_key(self, key):
+        self.key = key
 
     def set_probabilities(self, probabilities):
         self.probabilities = probabilities
@@ -120,8 +133,12 @@ class MotifGen:
 
     def choose_motif(self):
         if self.probabilities:
-            key_ind = np.argmax(self.probabilities)
-            key = PITCH_CLASSES[key_ind]
+            if self.active_color_flag:
+                key = self.key
+                key_ind = PITCH_CLASSES.index(key)
+            else:
+                key_ind = np.argmax(self.probabilities)
+                key = PITCH_CLASSES[key_ind]
             print("Key is", key)
             print_trend(trend=self.trend)
             if self.trend == 4:
@@ -169,8 +186,8 @@ async def send_notes(pizza_comm, motif_gen):
 
 
 async def main():
-    # pizza_comm = PizzaComm('IAC pizza', 'IAC drone')
-    pizza_comm = PizzaComm('pizza 2', 'drone')
+    pizza_comm = PizzaComm('IAC pizza', 'IAC drone')
+    # pizza_comm = PizzaComm('pizza 2', 'drone')
     tcp_comm = TCPComm('localhost', 12346)
     motif_gen = MotifGen()
     await asyncio.gather(
