@@ -79,9 +79,9 @@ def get_initial_notes(data, direction, scale):
             return entry['initial_note']
     return None
 
-def sample_initial_note(direction, scale):
+def sample_initial_note(direction:int, scale:str):
     """Load data, find initial notes for given direction and scale, and randomly sample one note."""
-    data = load_data('initial_notes.json')
+    data = load_data('motifs_df/initial_notes.json')
     initial_notes = get_initial_notes(data, direction, scale)
 
     if initial_notes:

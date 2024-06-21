@@ -77,7 +77,7 @@ class MarkovManager:
         combinations = [(scale, trend) for scale in scales for trend in trends]
         for scale, trend in combinations:
             m = SecondOrderMarkovModel()
-            m.load_model(f'models/markov-{scale}-{trend}.pkl')
+            m.load_model(f'markov/models/markov-{scale}-{trend}.pkl')
             self.models_dict[f"{scale}-{trend}"] = m
 
     def get_model(self, trend, scale):

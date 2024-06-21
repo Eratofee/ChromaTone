@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import ast
 from markov.markov_chain import MarkovManager
+from utils import sample_initial_note
 
 PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b", "g", "a_b", "a", "b_b", "b"]
 oktave = 5
@@ -16,8 +17,9 @@ OFF = 4
 
 class MotifGen:
     def __init__(self):
-        # self.markov_manager = MarkovManager()
+        self.markov_manager = MarkovManager()
         self.probabilities = None
+        self.with_markov: bool = False
         self.scale = None
         self.trend = CONSTANT
         self.duration = 0.35
@@ -66,7 +68,13 @@ class MotifGen:
             # If trend is OFF, return None to indicate no motif should be generated
             if self.trend == OFF:
                 return None
-            
+            if self.with_markov:
+                # markov implementation --> Work in progress
+                initial_note = sample_initial_note(direction=int(self.trend), scale=str(self.scale))
+                markov_model = self.markov_manager.get_model(trend=self.trend, scale=self.scale)
+                markov_seq = markov_model.generate_sequence([-1, initial_note], 9)
+                return markov_seq + key_ind, self.duration, self.trend, translation_pit_2_midi[key] - 24
+
             # Filter the midi_motives DataFrame based on the trend and scale
             df_filtered = midi_motives[(midi_motives["direction"] == self.trend) & (midi_motives["scale"] == self.scale)]
             
