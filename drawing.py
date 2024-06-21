@@ -11,57 +11,7 @@ import time
 import math
 import colorutils
 
-UP = 0
-DOWN = 1
-VARYING = 2
-CONSTANT = 3
-OFF = 4
-
-color_ranges = {
-    'red': [(0, 10), (166, 180)], 
-    'orange': (11, 23),
-    'yellow': (24, 37),
-    'spring_green': (38, 55),
-    'green': (56, 68),
-    'turquoise': (69, 82),
-    'cyan': (83, 99),
-    'ocean': (100, 113),
-    'blue': (114, 127),
-    'violet': (128, 145),
-    'magenta': (146, 165)
-}
-
-color_notes = {
-    "c": "white",
-    "d_b": "ocean",
-    "d": "turquoise",
-    "e_b": "orange",
-    "e": "yellow",
-    "f": "green",
-    "g_b": "spring_green",
-    "g": "blue",
-    "a_b": "cyan",
-    "a": "red",
-    "b_b": "magenta",
-    "b": "violet"
-}
-
-notes_colors = {
-    "white": "c",
-    "ocean": "d_b",
-    "turquoise": "d",
-    "orange": "e_b",
-    "yellow": "e",
-    "green": "f",
-    "spring_green": "g_b",
-    "blue": "g",
-    "cyan": "a_b",
-    "red": "a",
-    "magenta": "b_b",
-    "violet": "b"
-}
-
-PITCH_CLASSES = ["c", "d_b", "d", "e_b", "e", "f", "g_b","g", "a_b", "a", "b_b", "b"]
+from utils import UP, DOWN, VARYING, CONSTANT, OFF, color_ranges, color_notes, notes_colors, PITCH_CLASSES, print_trend
 
 def sum_color_counts(color_counts):
     total_count = np.sum(list(color_counts.values()))
@@ -108,18 +58,6 @@ def get_color_statistics(image):
     pitch_probabilities = calculate_pitch_probabilities(color_counts, color_notes)
 
     return pitch_probabilities, scale
-
-def print_trend(trend):
-    if trend == UP:
-        print("Trend: Up")
-    elif trend == DOWN:
-        print("Trend: Down")
-    elif trend == CONSTANT:
-        print("Trend: Constant")
-    elif trend == VARYING:
-        print("Trend: Varying")
-    else:
-        print("Trend: Off")
 
 def determine_color(hue, saturation, value):
     if value < 25:
@@ -192,7 +130,6 @@ def analyse_send_data(image, trend, speed_measure, active_color_flag, active_col
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(('localhost', 12346))  
         s.sendall(data.encode('utf-8'))
-
     return 
 
 class DrawingApp:
