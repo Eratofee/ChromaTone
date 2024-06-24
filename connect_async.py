@@ -7,6 +7,8 @@ import time
 from mido import Message
 from motifs_gen import MotifGen
 
+global_close = False
+
 class PizzaComm:
     def __init__(self, port_name_harp, port_name_drone):
         # Initialize MIDI output ports for harp and drone
@@ -43,8 +45,9 @@ class TCPComm:
         self.sock.setblocking(False)
 
     async def check_for_incoming_data(self, motif_gen):
+        global global_close
         loop = asyncio.get_running_loop()
-        while True:
+        while not global_close:
             try:
                 # Accept a new connection
                 conn, _ = await loop.sock_accept(self.sock)
@@ -63,32 +66,39 @@ class TCPComm:
                     if data_buffer:
                         # Decode and process the received JSON data
                         received_data = json.loads(data_buffer.decode('utf-8'))
-                        probabilities = received_data.get("pitch_probabilities")
-                        trend = received_data.get("trend")
-                        scale = received_data.get("scale")
-                        duration = received_data.get("duration")
-                        active_color_flag = received_data.get("active_color_flag")
-                        if active_color_flag:
-                            key = received_data.get("key")
-                            motif_gen.set_key(key)
-                        motif_gen.set_active_color_flag(active_color_flag)
-                        motif_gen.set_probabilities(probabilities)
-                        motif_gen.set_trend(trend)
-                        motif_gen.set_scale(scale)
-                        motif_gen.set_duration(duration)
-                        print("CONNECT: Received data")
+                        close = received_data.get("close")
+                        if close:
+                            conn.close()
+                            global_close = True
+                            pass
+                        else:
+                            probabilities = received_data.get("pitch_probabilities")
+                            trend = received_data.get("trend")
+                            scale = received_data.get("scale")
+                            duration = received_data.get("duration")
+                            active_color_flag = received_data.get("active_color_flag")
+                            if active_color_flag:
+                                key = received_data.get("key")
+                                motif_gen.set_key(key)
+                            motif_gen.set_active_color_flag(active_color_flag)
+                            motif_gen.set_probabilities(probabilities)
+                            motif_gen.set_trend(trend)
+                            motif_gen.set_scale(scale)
+                            motif_gen.set_duration(duration)
+                            print("CONNECT: Received data")
             except socket.error as e:
                 print('CONNETC: Error:', e)
             await asyncio.sleep(0.1)
 
 async def send_notes(pizza_comm, motif_gen):
+    global global_close
     def duration_changed(duration):
         return motif_gen.get_duration() != duration
     
     # def trend_changed(trend):
     #     return motif_gen.get_trend() != trend
 
-    while True:
+    while not global_close:
         print("CONNECT: Choosing motif")
         notes, duration, trend, key = motif_gen.choose_motif()
         print("CONNECT: Key: ", key)
@@ -107,6 +117,7 @@ async def send_notes(pizza_comm, motif_gen):
             await asyncio.sleep(1)
 
 async def main():
+    global global_close
     # Initialize communication objects
     pizza_comm = PizzaComm('IAC pizza', 'IAC drone')
     tcp_comm = TCPComm('localhost', 12346)
@@ -116,6 +127,10 @@ async def main():
         tcp_comm.check_for_incoming_data(motif_gen),
         send_notes(pizza_comm, motif_gen),
     )
+
+    pizza_comm.outport_harp.close()
+    pizza_comm.outport_drone.close()
+    tcp_comm.sock.close()
 
 if __name__ == "__main__":
     # Run the main event loop

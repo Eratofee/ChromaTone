@@ -167,6 +167,7 @@ def analyse_send_data(image, trend, speed_measure, active_color_flag, active_col
     print_analysis_results(pitch_probabilities, trend, scale, duration)
 
     data_to_send = {
+        "close": False,
         "pitch_probabilities": pitch_probabilities,
         "scale": scale,
         "trend": trend,
@@ -188,9 +189,9 @@ def calculate_duration(speed_measure):
         A float representing the duration of the note, with faster speeds resulting in shorter durations.
     """
     if speed_measure > 7000:
-        return 0.01
-    elif speed_measure > 5000:
         return 0.05
+    elif speed_measure > 5000:
+        return 0.07
     elif speed_measure > 3000:
         return 0.1
     elif speed_measure > 1000:
@@ -217,6 +218,29 @@ def print_analysis_results(pitch_probabilities, trend, scale, duration):
     print_trend(trend)
     print("Scale:", scale)
     print("Duration:", duration)
+
+def send_close_signal():
+    """
+    Sends a signal to indicate that a close action should be performed.
+
+    This function constructs a dictionary with a 'close' key set to True,
+    and sends this data using the send_data function. It handles any exceptions
+    that might occur during the execution of send_data to ensure graceful failure.
+
+    Returns:
+        bool: True if the data was sent successfully, False otherwise.
+    """
+    data_to_send = {
+        "close": True
+    }
+    try:
+        send_data(json.dumps(data_to_send))
+        return True
+    except NameError:
+        print("Error: send_data function is not defined.")
+    except Exception as e:
+        print(f"An error occurred while sending data: {e}")
+    return False
 
 def send_data(data):
     """
@@ -285,7 +309,7 @@ class DrawingApp:
         Configures the style of the Tkinter widgets used in the application.
         """
         self.style = ttk.Style()
-        self.style.theme_use('default')  
+        self.style.theme_use('aqua')  
         self.style.configure("Horizontal.TScale", background='#333', foreground='white', troughcolor='#555', sliderlength=20, borderwidth=1)
         self.style.map("Horizontal.TScale", background=[('active', '#555')])
         self.style.configure("Eraser.TButton", font=('Helvetica', 13))
@@ -353,7 +377,7 @@ class DrawingApp:
         self.brush_thickness_label = ttk.Label(self.color_frame, text="Thickness:")
         self.brush_thickness_label.pack(side='left', padx=5, in_=self.color_frame)
         self.brush_thickness = ttk.Scale(self.color_frame, from_=1, to=40, orient='horizontal', style="Horizontal.TScale")
-        self.brush_thickness.set(10)  # default thickness
+        self.brush_thickness.set(10) 
         self.brush_thickness.pack(side='left', padx=5, in_=self.color_frame)
 
     def setup_canvas(self):
@@ -389,6 +413,14 @@ class DrawingApp:
         self.eraser_active = False
         self.direction_speed_analysis_limit = 100
         self.capture_delay = 2000  
+
+    def on_close(self):
+        """
+        Handles application closure: performs cleanup and closes the window.
+        """
+        send_close_signal()
+        print("Closing application...")
+        self.root.destroy()
 
     def choose_color(self):
         """
@@ -588,6 +620,7 @@ def main():
     """
     root = Tk()
     app = DrawingApp(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_close)
     root.mainloop()
 
 if __name__ == "__main__":

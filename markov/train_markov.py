@@ -6,7 +6,7 @@ if __name__ == "__main__":
     trends = [0,1,2,3]
     combinations = [(scale, trend) for scale in scales for trend in trends]
 
-    df = pd.read_csv("midi_motives.csv")
+    df = pd.read_csv("motifs_df/midi_motives.csv")
 
     # Iterate through each combination
     for scale, trend in combinations:
